@@ -19,7 +19,7 @@ class Environment:
     # Constructor
     ##################################################################
     
-    def __init__ (self, maze, agent, tick_length = 1, verbose = True):
+    def __init__ (self, maze, tick_length = 1, verbose = True):
         """
         Initializes the environment from a given maze, specified as an
         array of strings with maze elements
@@ -32,9 +32,11 @@ class Environment:
         self._cols = len(maze[0])
         self._tick_length = tick_length
         self._verbose = verbose
-        self._pits = set()
+        self._pellets = set()
         self._goals = set()
         self._walls = set()
+
+        self._pellets_eaten = 0
         
         # Scan for pits and goals in the input maze
         for (row_num, row) in enumerate(maze):
@@ -43,13 +45,13 @@ class Environment:
                     self._walls.add((col_num, row_num))
                 if cell == Constants.GOAL_BLOCK:
                     self._goals.add((col_num, row_num))
-                if cell == Constants.PIT_BLOCK:
-                    self._pits.add((col_num, row_num))
+                if cell == Constants.PELLET_BLOCK:
+                    self._pellets.add((col_num, row_num))
                 if cell == Constants.PLR_BLOCK:
                     self._player_loc = self._initial_loc = (col_num, row_num)
-        self._spcl = self._pits | self._goals | self._walls
-        self._wrn1_tiles = self._get_wrn_set([self._get_adjacent(loc, 1) for loc in self._pits])
-        self._wrn2_tiles = self._get_wrn_set([self._get_adjacent(loc, 2) for loc in self._pits])
+        self._spcl = self._pellets | self._goals | self._walls
+        self._wrn1_tiles = self._get_wrn_set([self._get_adjacent(loc, 1) for loc in self._pellets])
+        self._wrn2_tiles = self._get_wrn_set([self._get_adjacent(loc, 2) for loc in self._pellets])
 
         # Initialize the MazeAgent and ready simulation!
         self._goal_reached = False
@@ -62,7 +64,9 @@ class Environment:
             self._og_maze[r][c] = Constants.WRN_BLOCK_2
         for (c, r) in self._wrn1_tiles:
             self._og_maze[r][c] = Constants.WRN_BLOCK_1
-        self._agent = MazeAgent(self)
+
+        # Initialize MazeAgent here
+        self._agent = PacmanAgent()
     
     
     ##################################################################
@@ -94,20 +98,32 @@ class Environment:
         score = 0
         while (score > Constants.get_min_score()):
             time.sleep(self._tick_length)
+            print("*** NEW TICK CYCLE ***")
             
             # Get player's next move in their plan, then execute
-            next_act = self._agent.get_next_move()
+            next_act = self._agent.choose_action(self._ag_maze)
+            print("next_act: ", next_act)
             self._move_request(next_act)
             
             # Return a perception for the agent to think about and plan next
-            perception = {"loc": self._player_loc, "tile": self._ag_tile}
-            self._agent.think(perception)
+            # perception = {"loc": self._player_loc, "tile": self._ag_tile}
+            # self._agent.choose_action(perception)
             
             # Assess the post-move penalty and whether or not the game is complete
-            penalty = Constants.get_pit_penalty() if self._pit_test(self._player_loc) else Constants.get_mov_penalty()
+            # if self._pellet_test(self._player_loc):
+            #     print("PELLET EATEN!!!")
+            #     self._pellets_eaten += Constants.get_pellet_reward()
+            # print("PELLET SCORE:", self._pellets_eaten)
+
+            penalty = Constants.get_mov_penalty()
             score = score - penalty
             if self._verbose:
-                print("\nCurrent Loc: " + str(self._player_loc) + " [" + self._ag_tile + "]\nLast Move: " + str(next_act) + "\nScore: " + str(score) + "\n")
+                print(
+                    "\nCurrent Loc: " + str(self._player_loc) + " [" + self._ag_tile + "]" +
+                    "\nLast Move: " + str(next_act) + 
+                    "\nScore: " + str(score) +
+                    "\nPellets Eaten: " + str(self._pellets_eaten) + 
+                    "\n")
             if self._goal_test(self._player_loc):
                 break
         
@@ -131,7 +147,8 @@ class Environment:
     def _get_wrn_set (self, wrn_list):
         return {item for sublist in wrn_list for item in sublist if item not in self._spcl}
     
-    def _update_display (self, move):
+    # Print the maze and agent's maze to the screen
+    def _display (self):
         for (rowIndex, row) in enumerate(self._maze):
             print(''.join(row) + "\t" + ''.join(self._ag_maze[rowIndex]))
         
@@ -141,32 +158,69 @@ class Environment:
     def _goal_test (self, loc):
         return loc in self._goals
     
-    def _pit_test (self, loc):
-        return loc in self._pits
+    def _pellet_test (self, loc):
+        result = loc in self._pellets
+
+        print("PELLETS SET BEFORE:")
+        print(self._pellets)
+
+        if result:
+            self._pellets.remove(loc) # remove the pellet after being eaten
+
+        print("PELLETS SET AFTER:")
+        print(self._pellets)
+        return result
         
     def _make_agent_maze (self):
         """
         Converts the 'true' maze into one with hidden tiles (?) for the agent
         to update as it learns
         """
-        sub_regexp = "[" + Constants.PIT_BLOCK + Constants.SAFE_BLOCK + "]"
+        sub_regexp = "[" + Constants.PELLET_BLOCK + Constants.SAFE_BLOCK + "]"
         return [list(re.sub(sub_regexp, Constants.UNK_BLOCK, r)) for r in self._maze]
     
     def _move_request (self, move):
         old_loc = self._player_loc
+        print("old_loc:", old_loc)
+
         new_loc = old_loc if move == None else tuple(sum(x) for x in zip(self._player_loc, Constants.MOVE_DIRS[move]))
+        print("new_loc:", new_loc)
+
+        # If you hit a wall, move back and do nothing
         if self._wall_test(new_loc):
             new_loc = old_loc
+        else: # otherwise, process the new location
+            if self._pellet_test(new_loc):
+                print("PELLET EATEN!!!")
+                self._pellets_eaten += Constants.get_pellet_reward()
+                print("PELLET SCORE:", self._pellets_eaten)
+
+                print("PELLET BEFORE:")
+                self._display()
+                print()
+
+                # Remove the Pellet from the OG (original) maze
+                self._og_maze[new_loc[1]][new_loc[0]] = Constants.SAFE_BLOCK
+
+                print("PELLET AFTER:")
+                self._display()
+                print()
+
         self._update_mazes(self._player_loc, new_loc)
         self._player_loc = new_loc
         if self._verbose:
-            self._update_display(move)
+            self._display()
     
     def _update_mazes (self, old_loc, new_loc):
+        # Actual Maze
         self._maze[old_loc[1]][old_loc[0]] = self._og_maze[old_loc[1]][old_loc[0]]
         self._maze[new_loc[1]][new_loc[0]] = Constants.PLR_BLOCK
+
+        # Agent Perception Maze
         self._ag_maze[old_loc[1]][old_loc[0]] = self._og_maze[old_loc[1]][old_loc[0]]
         self._ag_maze[new_loc[1]][new_loc[0]] = Constants.PLR_BLOCK
+
+        # Agent "tile"
         self._ag_tile = self._og_maze[new_loc[1]][new_loc[0]]
 
 # Appears here to avoid circular dependency
@@ -185,8 +239,8 @@ if __name__ == "__main__":
          "X...GX",
          "X..PPX",
          "X....X",
-         "X..P.X",
-         "X@...X",
+         "XP.P.X",
+         "X@P..X",
          "XXXXXX"],
         
         # Medium difficulty: Score > -30
@@ -211,5 +265,5 @@ if __name__ == "__main__":
     agent = PacmanAgent()
     
     # Pick your difficulty!
-    env = Environment(mazes[0], agent) # Call with tick_length = 0 for instant games
+    env = Environment(mazes[0]) # Call with tick_length = 0 for instant games
     env.start_mission()

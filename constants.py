@@ -29,6 +29,14 @@ class Constants:
         return 20
     
     @staticmethod
+    def get_pellet_reward ():
+        """
+        Returns the cost of stepping into a Pit... you're not dead just...
+        like... really inconvenienced
+        """
+        return 1
+    
+    @staticmethod
     def get_mov_penalty ():
         """
         Returns the cost of a movement onto any safe tile
@@ -42,7 +50,7 @@ class Constants:
     # Maze content constants
     WALL_BLOCK  = "X"
     GOAL_BLOCK  = "G"
-    PIT_BLOCK   = "P"
+    PELLET_BLOCK   = "P"
     SAFE_BLOCK  = "."
     PLR_BLOCK   = "@"
     WRN_BLOCK_1 = "1"

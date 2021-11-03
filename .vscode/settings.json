@@ -1,3 +1,23 @@
 {
-  "editor.tabSize": 4
+  "editor.tabSize": 4,
+  "vim.otherModesKeyBindings": [
+    {
+      "before": ["u"],
+      "after": [],
+      "commands": [
+        {
+          "command": "undo"
+        }
+      ]
+    },
+    {
+      "before": ["<C-r>"],
+      "after": [],
+      "commands": [
+        {
+          "command": "redo"
+        }
+      ]
+    }
+  ]
 }

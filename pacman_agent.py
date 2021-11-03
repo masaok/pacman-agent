@@ -39,30 +39,22 @@ class PacmanAgent:
     ##################################################################
     # Methods
     ##################################################################
-    
-    # [!] TODO! Agent currently just runs straight up
-    def think(self, perception):
+    def choose_action(self, perception):
         """
-        think is parameterized by the agent's perception of the tile type
-        on which it is now standing, and is called during the environment's
-        action loop. This method is the chief workhorse of your MazeAgent
-        such that it must then generate a plan of action from its current
-        knowledge about the environment.
-        
-        :perception: A dictionary providing the agent's current location
-        and current tile type being stood upon, of the format:
-          {"loc": (x, y), "tile": tile_type}
+        Returns an action from a set {U, D, L, R} given perception (maze)
+        Currently returns a random choice
+        TODO: give a choice of moving toward the goal or away from the goal
+
+        Parameters:
+            perception (array): array of strings representation of the maze
+
+        Returns:
+            str: direction to move
         """
-        
-        # Agent simply moves randomly at the moment...
-        # Do something that thinks about the perception!
-        self.plan.put(random.choice(Constants.MOVES))
-    
-    def get_next_move(self):
-        """
-        Returns the next move in the plan, if there is one, otherwise None
-        [!] You should NOT need to modify this method -- contact Dr. Forney
-            if you're thinking about it
-        """
-        return None if self.plan.empty() else self.plan.get()
+
+        directions = ["U", "D", "L", "R"]
+        random_index = random.randint(0,len(directions)-1)
+        return directions[random_index]
+
+
     

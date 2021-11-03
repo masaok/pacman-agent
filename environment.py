@@ -32,10 +32,14 @@ class Environment:
         self._cols = len(maze[0])
         self._tick_length = tick_length
         self._verbose = verbose
-        self._pellets = set()
+
+        # Maze block sets
+        self._ghosts = set()
         self._goals = set()
+        self._pellets = set()
         self._walls = set()
 
+        # Score keeping
         self._pellets_eaten = 0
         
         # Scan for pits and goals in the input maze
@@ -43,12 +47,15 @@ class Environment:
             for (col_num, cell) in enumerate(row):
                 if cell == Constants.WALL_BLOCK:
                     self._walls.add((col_num, row_num))
-                if cell == Constants.GOAL_BLOCK:
+                if cell == Constants.END_BLOCK:
                     self._goals.add((col_num, row_num))
+                if cell == Constants.GHOST_BLOCK:
+                    self._ghosts.add((col_num, row_num))
                 if cell == Constants.PELLET_BLOCK:
                     self._pellets.add((col_num, row_num))
                 if cell == Constants.PLR_BLOCK:
                     self._player_loc = self._initial_loc = (col_num, row_num)
+
         self._spcl = self._pellets | self._goals | self._walls
         self._wrn1_tiles = self._get_wrn_set([self._get_adjacent(loc, 1) for loc in self._pellets])
         self._wrn2_tiles = self._get_wrn_set([self._get_adjacent(loc, 2) for loc in self._pellets])
@@ -124,7 +131,11 @@ class Environment:
                     "\nScore: " + str(score) +
                     "\nPellets Eaten: " + str(self._pellets_eaten) + 
                     "\n")
+            if self._ghost_test(self._player_loc):
+                print("GHOST HIT!  DONE!")
+                break
             if self._goal_test(self._player_loc):
+                print("GOAL HIT!  DONE!")
                 break
         
         if self._verbose:
@@ -154,6 +165,9 @@ class Environment:
         
     def _wall_test (self, loc):
         return loc in self._walls
+    
+    def _ghost_test (self, loc):
+        return loc in self._ghosts
     
     def _goal_test (self, loc):
         return loc in self._goals
@@ -236,16 +250,16 @@ if __name__ == "__main__":
     mazes = [
         # Easy difficulty: Score > -20
         ["XXXXXX",
-         "X...GX",
-         "X..PPX",
+         "X...EX",
+         "X.GPPX",
          "X....X",
-         "XP.P.X",
-         "X@P..X",
+         "XG.P.X",
+         "X@P.GX",
          "XXXXXX"],
         
         # Medium difficulty: Score > -30
         ["XXXXXXXXX",
-         "X..PGP..X",
+         "X..PEP..X",
          "X.......X",
          "X..P.P..X",
          "X.......X",
@@ -254,7 +268,7 @@ if __name__ == "__main__":
         
         # Hard difficulty: Score > -35
         ["XXXXXXXXX",
-         "X..PG...X",
+         "X..PE...X",
          "X.......X",
          "X.P.P.P.X",
          "XP.....PX",

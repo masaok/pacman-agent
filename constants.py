@@ -49,7 +49,8 @@ class Constants:
     
     # Maze content constants
     WALL_BLOCK  = "X"
-    GOAL_BLOCK  = "G"
+    END_BLOCK  = "E"
+    GHOST_BLOCK   = "G"
     PELLET_BLOCK   = "P"
     SAFE_BLOCK  = "."
     PLR_BLOCK   = "@"

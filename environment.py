@@ -10,6 +10,8 @@ import time
 import copy
 from constants import Constants
 
+from pacman_agent import PacmanAgent
+
 class Environment:
     
     
@@ -17,7 +19,7 @@ class Environment:
     # Constructor
     ##################################################################
     
-    def __init__ (self, maze, tick_length = 1, verbose = True):
+    def __init__ (self, maze, agent, tick_length = 1, verbose = True):
         """
         Initializes the environment from a given maze, specified as an
         array of strings with maze elements
@@ -205,7 +207,9 @@ if __name__ == "__main__":
          "X...@...X",
          "XXXXXXXXX"],
     ]
+
+    agent = PacmanAgent()
     
     # Pick your difficulty!
-    env = Environment(mazes[0]) # Call with tick_length = 0 for instant games
+    env = Environment(mazes[0], agent) # Call with tick_length = 0 for instant games
     env.start_mission()

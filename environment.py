@@ -19,7 +19,7 @@ class Environment:
     # Constructor
     ##################################################################
     
-    def __init__ (self, maze, tick_length = 1, verbose = True):
+    def __init__ (self, maze, tick_length = 1, verbose = True, debug = True):
         """
         Initializes the environment from a given maze, specified as an
         array of strings with maze elements
@@ -31,6 +31,7 @@ class Environment:
         self._rows = len(maze)
         self._cols = len(maze[0])
         self._tick_length = tick_length
+        self._debug = debug
         self._verbose = verbose
 
         # Maze block sets
@@ -65,8 +66,11 @@ class Environment:
         self._ag_maze = self._make_agent_maze()
         self._ag_tile = Constants.SAFE_BLOCK
         self._maze = [list(row) for row in maze] # Easier to change elements in this format
+
+        # Keep a copy of the original maze
         self._og_maze = copy.deepcopy(self._maze)
         self._og_maze[self._player_loc[1]][self._player_loc[0]] = Constants.SAFE_BLOCK
+
         for (c, r) in self._wrn2_tiles:
             self._og_maze[r][c] = Constants.WRN_BLOCK_2
         for (c, r) in self._wrn1_tiles:
@@ -103,6 +107,8 @@ class Environment:
         mechanics
         """
         score = 0
+        print("*** INITIAL MAZE BEFORE TICKING ***")
+        self._display()
         while (score > Constants.get_min_score()):
             time.sleep(self._tick_length)
             print("*** NEW TICK CYCLE ***")
@@ -111,6 +117,7 @@ class Environment:
             next_act = self._agent.choose_action(self._ag_maze)
             print("next_act: ", next_act)
             self._move_request(next_act)
+
             
             # Return a perception for the agent to think about and plan next
             # perception = {"loc": self._player_loc, "tile": self._ag_tile}
@@ -132,10 +139,18 @@ class Environment:
                     "\nPellets Eaten: " + str(self._pellets_eaten) + 
                     "\n")
             if self._ghost_test(self._player_loc):
-                print("GHOST HIT!  DONE!")
+                print("PACMAN MOVED AND HIT A GHOST!  DONE!")
                 break
             if self._goal_test(self._player_loc):
-                print("GOAL HIT!  DONE!")
+                print("PACMAN HIT THE GOAL!  DONE!")
+                break
+
+            print("GHOSTS MOVING ...")
+            self._move_ghosts()
+            self._display()
+            print("\n")
+            if self._ghost_test(self._player_loc):
+                print("GHOSTS MOVED AND HIT PACMAN!  DONE!")
                 break
         
         if self._verbose:
@@ -175,14 +190,14 @@ class Environment:
     def _pellet_test (self, loc):
         result = loc in self._pellets
 
-        print("PELLETS SET BEFORE:")
-        print(self._pellets)
+        if self._debug: print("PELLETS SET BEFORE:")
+        if self._debug: print(self._pellets)
 
         if result:
             self._pellets.remove(loc) # remove the pellet after being eaten
 
-        print("PELLETS SET AFTER:")
-        print(self._pellets)
+        if self._debug: print("PELLETS SET AFTER:")
+        if self._debug: print(self._pellets)
         return result
         
     def _make_agent_maze (self):
@@ -205,20 +220,12 @@ class Environment:
             new_loc = old_loc
         else: # otherwise, process the new location
             if self._pellet_test(new_loc):
-                print("PELLET EATEN!!!")
+                if self._debug: print("PELLET EATEN!!!")
                 self._pellets_eaten += Constants.get_pellet_reward()
-                print("PELLET SCORE:", self._pellets_eaten)
-
-                print("PELLET BEFORE:")
-                self._display()
-                print()
+                if self._debug: print("PELLET SCORE:", self._pellets_eaten)
 
                 # Remove the Pellet from the OG (original) maze
                 self._og_maze[new_loc[1]][new_loc[0]] = Constants.SAFE_BLOCK
-
-                print("PELLET AFTER:")
-                self._display()
-                print()
 
         self._update_mazes(self._player_loc, new_loc)
         self._player_loc = new_loc
@@ -234,8 +241,47 @@ class Environment:
         self._ag_maze[old_loc[1]][old_loc[0]] = self._og_maze[old_loc[1]][old_loc[0]]
         self._ag_maze[new_loc[1]][new_loc[0]] = Constants.PLR_BLOCK
 
-        # Agent "tile"
+        # Agent "tile" -- what is an agent tile?
         self._ag_tile = self._og_maze[new_loc[1]][new_loc[0]]
+
+    def _move_ghosts(self):
+
+        index = 0
+        for ghost in self._ghosts.copy():
+
+            # TODO: create new function for actions for ghosts
+            move = self._agent.choose_action(self._ag_maze)
+
+            if self._debug: print("GHOST " + str(index) + ":")
+            if self._debug: print(ghost)
+
+            old_loc = ghost
+            new_loc = old_loc if move == None else tuple(sum(x) for x in zip(ghost, Constants.MOVE_DIRS[move]))
+
+            if self._debug: print("  MOVING " + str(index) + " to " + str(move) + ":")
+            if self._debug: print(new_loc)
+
+            # If ghost hits a wall, move it back and do nothing
+            if self._wall_test(new_loc):
+                new_loc = old_loc
+            # else: # otherwise, process the new location
+
+            # Update Ghosts set
+            self._ghosts.remove(old_loc)
+            self._ghosts.add(new_loc)
+
+            ## Update the Mazes
+
+            # Actual Maze
+            self._maze[old_loc[1]][old_loc[0]] = self._og_maze[old_loc[1]][old_loc[0]]
+            self._maze[new_loc[1]][new_loc[0]] = Constants.GHOST_BLOCK
+
+            # Agent Perception Maze
+            self._ag_maze[old_loc[1]][old_loc[0]] = self._og_maze[old_loc[1]][old_loc[0]]
+            self._ag_maze[new_loc[1]][new_loc[0]] = Constants.GHOST_BLOCK
+
+            index += 1
+
 
 # Appears here to avoid circular dependency
 from maze_agent import MazeAgent
@@ -279,5 +325,5 @@ if __name__ == "__main__":
     agent = PacmanAgent()
     
     # Pick your difficulty!
-    env = Environment(mazes[0]) # Call with tick_length = 0 for instant games
+    env = Environment(mazes[0], debug = False) # Call with tick_length = 0 for instant games
     env.start_mission()

@@ -12,8 +12,8 @@
 
 ## Components
 
-- PacmanAgent: Contains all of the logic for the agent controlling Pacman
-- Environment: Contains the game logic and is largely structured in the same way as the Wumpus World / Blindbot’s environment
+- **PacmanAgent**: Contains all of the logic for the agent controlling Pacman
+- **Environment**: Contains the game logic and is largely structured in the same way as the Wumpus World / Blindbot’s environment
   - A constructor, parameterized by the Pacman Trainer’s array-of-strings maze representation, that initializes all of the maze variables, as follows:
     - The maze structure, where walls are located, and thus what legal moves are available in any position.
     - The sets and positions of all game actors (beginning with their provided starting positions), including:

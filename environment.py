@@ -344,6 +344,8 @@ class Environment:
 
             # Update the Mazes
 
+            # TODO: Fix a bug here where the old ghost is not being removed correctly
+
             # Actual Maze
             self._maze[old_loc[1]][old_loc[0]
                                    ] = self._og_maze[old_loc[1]][old_loc[0]]
@@ -404,10 +406,7 @@ if __name__ == "__main__":
     # https://stackoverflow.com/questions/2395431/using-tkinter-in-python-to-edit-the-title-bar
     window.title("Pacman Imitation Learning")
 
-    # https://stackoverflow.com/questions/11340765/default-window-colour-tkinter-and-hex-colour-codes/11342481
-    window.configure(bg="black")
-
-    # Pick your difficulty!
+    # Start the environment
     # Call with tick_length = 0 for instant games
     env = Environment(mazes[0], window, debug=True)
 

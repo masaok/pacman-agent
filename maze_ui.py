@@ -89,4 +89,6 @@ class MazeUI:
                     self._canvas.create_rectangle(x1, y1, x2, y2, fill=color,
                                                   tags="area")
 
+        # Force the update so the window shows immediately
+        # https://python-forum.io/thread-34564.html
         self._window.update()

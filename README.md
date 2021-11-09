@@ -2,12 +2,19 @@
 
 ## Prerequisites
 
-- Python 3 (so far, it works with Python 3, but there may or may not be problems, in which case, try Python 2)
+- Python 3 (so far, it works with Python 3, but if there are problems, try Python 2)
+
+## Environment Tested
+
+### Windows 10 (Build 19042.1288)
+
+- Git Bash
+- Python 3.9.8
 
 ## Quickstart
 
 ```
-./run.sh
+$ python3 -u environment.py
 ```
 
 ## Components

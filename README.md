@@ -4,7 +4,7 @@
 
 - Python 3 (so far, it works with Python 3, but if there are problems, try Python 2)
 
-## Environment Tested
+## Environments Tested
 
 ### Windows 10 (Build 19042.1288)
 

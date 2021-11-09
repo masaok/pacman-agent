@@ -1,2 +1,4 @@
 
-python3 environment.py
+# -u unbuffered
+
+python3 -u environment.py

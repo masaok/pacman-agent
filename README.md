@@ -31,3 +31,9 @@
 ## TODO
 
 - All ghosts make an action choice governed by a coin-flip: 10% of the time, it will choose randomly, and the other 90%, it will take a step that brings it closer to Pacman. You can use / adapt the Pathfinder class I gave in the BlindBot package to help with pathfinding or just do something basic like looking at the Manhattan distance between a ghost and Pacman and then choosing the action that minimizes it.
+
+## Reminders
+
+- There will only be walls, pellets, ghosts, and open squares in the final version; the remnants of the BlindBot's "end goal" and "pits" will not be in the final version.
+- There won't be 2 versions of the maze state like we had with BlindBot (which were the agent's ag_maze and the environment's maze) since this will be a perfect-information game (the whole board is always visible to the agent, unlike for BlindBot).
+- The agent's choose_action method is called with the current perception (the maze state), which returns an action, which is really all we need to accomplish the "black box" part of the imitation learner.

@@ -94,29 +94,22 @@ class Environment:
         # self._maze_ui = MazeUI(maze)
 
         # Graphics GUI Stuff (tk)
-        start_x = 230
-        start_y = 270
-
-        x = start_x
-        y = start_y
-
-        width = 50
-        height = 50
 
         self._window = window
+        self._maze_ui = MazeUI(self._window, self._maze)
         # self._window = tk.Tk()
         # self._window.geometry("500x500")
 
-        self._canvas = tk.Canvas(self._window, height=500, width=500)
-        self._canvas.grid(row=0, column=0, sticky='w')
+        # self._canvas = tk.Canvas(self._window, height=500, width=500)
+        # self._canvas.grid(row=0, column=0, sticky='w')
 
-        coord = [x, y, x+width, y+height]
-        self._circle = self._canvas.create_oval(
-            coord, outline="red", fill="red")
+        # coord = [x, y, x+width, y+height]
+        # self._circle = self._canvas.create_oval(
+        #     coord, outline="red", fill="red")
 
-        coord = [x, y, x+40, y+40]
-        self._rect2 = self._canvas.create_rectangle(
-            coord, outline="Blue", fill="Blue")
+        # coord = [x, y, x+40, y+40]
+        # self._rect2 = self._canvas.create_rectangle(
+        #     coord, outline="Blue", fill="Blue")
 
         # self._move()
 
@@ -144,8 +137,12 @@ class Environment:
         return self._ag_maze
 
     def move(self):
+
         print("index: ", self._index)
         print("*** NEW TICK CYCLE ***")
+
+        print("GHOSTS:")
+        print(self._ghosts)
 
         # if (self._index >= 1):  # run after 1 second
         #     self._canvas.delete('all')
@@ -179,14 +176,16 @@ class Environment:
                 "\nScore: " + str(self._score) +
                 "\nPellets Eaten: " + str(self._pellets_eaten) +
                 "\n")
+
         if self._ghost_test(self._player_loc):
             print("PACMAN MOVED AND HIT A GHOST!  DONE!")
-            # return
-            self._window.destroy()
+            # self._window.destroy()
+            return
+
         if self._goal_test(self._player_loc):
             print("PACMAN HIT THE GOAL!  DONE!")
-            # return
-            self._window.destroy()
+            # self._window.destroy()
+            return
 
         print("GHOSTS MOVING ...")
         self._move_ghosts()
@@ -194,68 +193,18 @@ class Environment:
         print("\n")
         if self._ghost_test(self._player_loc):
             print("GHOSTS MOVED AND HIT PACMAN!  DONE!")
-            # return
-            self._window.destroy()
+            # self._window.destroy()
+            return
 
-        if self._verbose:
-            print("[!] Game Complete! Final Score: " + str(self._score))
+        # if self._verbose:
+        #     print("[!] Game Complete! Final Score: " + str(self._score))
+
+        # Test MazeUI
+        self._maze_ui.draw_maze()
+
+        input("Press Enter to continue...")
 
         self._window.after(self._tick_length * 1000, self.move)
-
-    def start_mission(self):
-        """
-        Manages the agent's action loop and the environment's record-keeping
-        mechanics
-        """
-        score = 0
-        print("*** INITIAL MAZE BEFORE TICKING ***")
-        self._display()
-        while (score > Constants.get_min_score()):
-            time.sleep(self._tick_length)
-            print("*** NEW TICK CYCLE ***")
-
-            # Get player's next move in their plan, then execute
-            next_act = self._agent.choose_action(self._ag_maze)
-            print("next_act: ", next_act)
-            self._move_request(next_act)
-
-            # Return a perception for the agent to think about and plan next
-            # perception = {"loc": self._player_loc, "tile": self._ag_tile}
-            # self._agent.choose_action(perception)
-
-            # Assess the post-move penalty and whether or not the game is complete
-            # if self._pellet_test(self._player_loc):
-            #     print("PELLET EATEN!!!")
-            #     self._pellets_eaten += Constants.get_pellet_reward()
-            # print("PELLET SCORE:", self._pellets_eaten)
-
-            penalty = Constants.get_mov_penalty()
-            score = score - penalty
-            if self._verbose:
-                print(
-                    "\nCurrent Loc: " + str(self._player_loc) + " [" + self._ag_tile + "]" +
-                    "\nLast Move: " + str(next_act) +
-                    "\nScore: " + str(score) +
-                    "\nPellets Eaten: " + str(self._pellets_eaten) +
-                    "\n")
-            if self._ghost_test(self._player_loc):
-                print("PACMAN MOVED AND HIT A GHOST!  DONE!")
-                break
-            if self._goal_test(self._player_loc):
-                print("PACMAN HIT THE GOAL!  DONE!")
-                break
-
-            print("GHOSTS MOVING ...")
-            self._move_ghosts()
-            self._display()
-            print("\n")
-            if self._ghost_test(self._player_loc):
-                print("GHOSTS MOVED AND HIT PACMAN!  DONE!")
-                break
-
-        if self._verbose:
-            print("[!] Game Complete! Final Score: " + str(score))
-        return score
 
     ##################################################################
     # "Private" Helper Methods
@@ -379,9 +328,19 @@ class Environment:
                 new_loc = old_loc
             # else: # otherwise, process the new location
 
+            print("GHOSTS BEFORE REMOVAL:")
+            print(self._ghosts)
+
             # Update Ghosts set
             self._ghosts.remove(old_loc)
+
+            print("GHOSTS AFTER REMOVAL:")
+            print(self._ghosts)
+
             self._ghosts.add(new_loc)
+
+            print("GHOSTS AFTER ADD:")
+            print(self._ghosts)
 
             # Update the Mazes
 
@@ -410,11 +369,11 @@ if __name__ == "__main__":
     mazes = [
         # Easy difficulty: Score > -20
         ["XXXXXX",
-         "X...EX",
+         "XG..EX",
          "X.GPPX",
          "X....X",
-         "XG.P.X",
-         "X@P.GX",
+         "XP.P.X",
+         "X@..GX",
          "XXXXXX"],
 
         # Medium difficulty: Score > -30
@@ -440,11 +399,21 @@ if __name__ == "__main__":
 
     window = tk.Tk()
 
+    # Add a window title
+    # https://pythonguides.com/python-tkinter-title/
+    # https://stackoverflow.com/questions/2395431/using-tkinter-in-python-to-edit-the-title-bar
+    window.title("Pacman Imitation Learning")
+
+    # https://stackoverflow.com/questions/11340765/default-window-colour-tkinter-and-hex-colour-codes/11342481
+    window.configure(bg="black")
+
     # Pick your difficulty!
     # Call with tick_length = 0 for instant games
-    env = Environment(mazes[0], window, debug=False)
+    env = Environment(mazes[0], window, debug=True)
 
+    # Graphical
     env.move()
     window.mainloop()
 
+    # Command-line
     # env.start_mission()

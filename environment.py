@@ -390,9 +390,11 @@ if __name__ == "__main__":
     window = tk.Tk()
 
     def on_exit():
-        global window
+        global window, env
         print("HELLO")
-        window.destroy()
+        env._maze_ui.window.destroy()  # env window
+        env._window.destroy()  # env window
+        window.destroy()  # root app window
         # sys.exit()
         # os._exit(1)
     window.protocol('WM_DELETE_WINDOW', on_exit)

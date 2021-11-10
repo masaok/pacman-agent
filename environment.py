@@ -128,6 +128,12 @@ class Environment:
 
     def move(self):
 
+        # Draw the Maze first, before any movement
+        self._maze_ui.draw_maze()
+        if self._debug:
+            # Wait for the button to be pressed to step forward
+            self._maze_ui.btn.wait_variable(self._maze_ui.btn_var)
+
         print("index: ", self._index)
         print("*** NEW TICK CYCLE ***")
 
@@ -192,13 +198,12 @@ class Environment:
 
         # # MazeUI Stuff
 
-        # Draw the Maze
-        self._maze_ui.draw_maze()
-
-        # Wait for the button to be pressed to step forward
-        self._maze_ui.btn.wait_variable(self._maze_ui.btn_var)
-
-        self._window.after(self._tick_length * 1000, self.move)
+        if self._debug:
+            # Wait for the button to be pressed to step forward
+            # self._maze_ui.btn.wait_variable(self._maze_ui.btn_var)
+            self._window.after(0, self.move)
+        else:
+            self._window.after(self._tick_length * 1000, self.move)
 
     ##################################################################
     # "Private" Helper Methods
@@ -372,7 +377,7 @@ if __name__ == "__main__":
          "X.......X",
          "X..P.P..X",
          "X.......X",
-         "X..@....X",
+         "X@......X",
          "XXXXXXXXX"],
 
         # Hard difficulty: Score > -35
@@ -389,6 +394,8 @@ if __name__ == "__main__":
 
     window = tk.Tk()
 
+    # Exit the Python app cleanly in terminal
+    # Credit: https://stackoverflow.com/q/69917376/10415969
     def on_exit():
         global window, env
         print("HELLO")
@@ -398,7 +405,9 @@ if __name__ == "__main__":
         # exit()
         # sys.exit()
         # os._exit(1)
-        raise SystemExit
+        # raise SystemExit
+        env._maze_ui.btn_var.set("")
+        exit(0)
     window.protocol('WM_DELETE_WINDOW', on_exit)
 
     # Add a window title
@@ -408,7 +417,9 @@ if __name__ == "__main__":
 
     # Start the environment
     # Call with tick_length = 0 for instant games
-    env = Environment(mazes[2], window, debug=False)
+    # TODO: Add command-line options so debug can be passed as a flag
+    debug = True
+    env = Environment(mazes[2], window, debug=debug)
 
     # Graphical
     env.move()

@@ -37,6 +37,7 @@ class GUI(Tk):
     def closing(self):
         self.destroy()
         self.var.set("")
+        self.step_button.wait_variable()
 
 
 app = GUI()

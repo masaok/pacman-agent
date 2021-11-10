@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import *
 
 from pprint import pprint
 
@@ -10,6 +11,10 @@ class MazeUI:
     ##################################################################
 
     def __init__(self, window, maze):
+
+        # Save the window to add buttons later
+        self.window = window
+
         print("MAZE UI INIT")
         self._maze = maze
         # self._window = tk.Tk()
@@ -22,17 +27,22 @@ class MazeUI:
 
         self._block_size = 80
 
-        canvas_width = self._cols * self._block_size
-        canvas_height = self._rows * self._block_size
+        self.canvas_width = self._cols * self._block_size
+        self.canvas_height = self._rows * self._block_size
 
-        w = canvas_width
-        h = canvas_height
+        self.controls_height = 100
+
+        # Leave room for buttons at the bottom
+        self.canvas_height += self.controls_height
+
+        w = self.canvas_width
+        h = self.canvas_height
 
         # get screen width and height
         ws = window.winfo_screenwidth()  # width of the screen
         hs = window.winfo_screenheight()  # height of the screen
 
-        # calculate x and y coordinates for the Tk root window
+        # Calculate x and y coordinates for the *centered* Tk root window
         x = (ws/2) - (w/2)
         y = (hs/2) - (h/2)
 
@@ -43,12 +53,23 @@ class MazeUI:
         self._window = window
 
         self._canvas = tk.Canvas(
-            self._window, height=canvas_height, width=canvas_width)
+            self._window, height=self.canvas_height, width=self.canvas_width)
         self._canvas.grid(row=0, column=0, sticky='w')
+
+        # Draw controls
+        # TODO: Don't draw the controls every render
+        self.btn_var = tk.IntVar()
+        self.btn = Button(self.window, text='Step forward', width=40,
+                          height=5, bd='10', command=lambda: self.btn_var.set(1))
+        self.exit_button = Button(self.window, text='Exit', width=40,
+                                  height=5, bd='10', command=self.destroy)
 
     ##################################################################
     # Methods
     ##################################################################
+
+    def destroy(self):
+        self.window.destroy()
 
     def draw_maze(self):
         pprint(self._maze)
@@ -88,6 +109,15 @@ class MazeUI:
                 else:
                     self._canvas.create_rectangle(x1, y1, x2, y2, fill=color,
                                                   tags="area")
+
+        # Draw controls
+        # TODO: Don't draw the controls every render
+        self._canvas.create_rectangle(
+            0, self.canvas_height - self.controls_height, self.canvas_width, self.canvas_height, fill="black")
+
+        self.btn.place(x=100, y=(self.canvas_height - self.controls_height))
+        # self.exit_button.place(
+        #     x=300, y=(self.canvas_height - self.controls_height))
 
         # Force the update so the window shows immediately
         # https://python-forum.io/thread-34564.html

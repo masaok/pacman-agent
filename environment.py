@@ -190,10 +190,13 @@ class Environment:
         # if self._verbose:
         #     print("[!] Game Complete! Final Score: " + str(self._score))
 
-        # Test MazeUI
+        # # MazeUI Stuff
+
+        # Draw the Maze
         self._maze_ui.draw_maze()
 
-        input("Press Enter to continue...")
+        # Wait for the button to be pressed to step forward
+        self._maze_ui.btn.wait_variable(self._maze_ui.btn_var)
 
         self._window.after(self._tick_length * 1000, self.move)
 
@@ -215,7 +218,8 @@ class Environment:
     # Print the maze and agent's maze to the screen
     def _display(self):
         for (rowIndex, row) in enumerate(self._maze):
-            print(''.join(row) + "\t" + ''.join(self._maze[rowIndex]))
+            # print(''.join(row) + "\t" + ''.join(self._maze[rowIndex]))
+            print(''.join(self._maze[rowIndex]))
 
     def _wall_test(self, loc):
         return loc in self._walls
@@ -385,6 +389,14 @@ if __name__ == "__main__":
 
     window = tk.Tk()
 
+    def on_exit():
+        global window
+        print("HELLO")
+        window.destroy()
+        # sys.exit()
+        # os._exit(1)
+    window.protocol('WM_DELETE_WINDOW', on_exit)
+
     # Add a window title
     # https://pythonguides.com/python-tkinter-title/
     # https://stackoverflow.com/questions/2395431/using-tkinter-in-python-to-edit-the-title-bar
@@ -392,7 +404,7 @@ if __name__ == "__main__":
 
     # Start the environment
     # Call with tick_length = 0 for instant games
-    env = Environment(mazes[0], window, debug=False)
+    env = Environment(mazes[2], window, debug=False)
 
     # Graphical
     env.move()

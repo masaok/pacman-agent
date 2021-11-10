@@ -2,12 +2,19 @@
 
 ## Prerequisites
 
-- Python 3 (so far, it works with Python 3, but there may or may not be problems, in which case, try Python 2)
+- Python 3 (so far, it works with Python 3, but if there are problems, try Python 2)
+
+## Environments Tested
+
+### Windows 10 (Build 19042.1288)
+
+- Git Bash
+- Python 3.9.8
 
 ## Quickstart
 
 ```
-./run.sh
+$ python3 -u environment.py
 ```
 
 ## Components
@@ -27,6 +34,7 @@
     - The PacmanAgent’s chooseAction method is called with the current game state, and its action choice is enacted (if it’s not a legal action, i.e., one that runs it into a wall, it does nothing that turn).
       - If Pacman eats a pellet, it’s removed from the board and the score is incremented
       - If Pacman moves onto a ghost’s tile, it dies and the game’s over
+- **MazeUI**: Given a Tk "root window", draw a Tk Canvas on it and all the blocks, characters, and items that make up a maze
 
 ## TODO
 

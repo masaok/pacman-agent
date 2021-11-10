@@ -21,7 +21,7 @@ class GUI(Tk):
 
         # Close the app if the button is pressed
         button = tk.Button(self, text="Exit",
-                           command=self.destroy)
+                           command=self.closing)
         button.place(relx=.5, rely=.5, anchor="c")
 
         # Step forward
@@ -37,7 +37,7 @@ class GUI(Tk):
     def closing(self):
         self.destroy()
         self.var.set("")
-        self.step_button.wait_variable()
+        exit(0)
 
 
 app = GUI()

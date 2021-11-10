@@ -393,8 +393,8 @@ if __name__ == "__main__":
         global window
         print("HELLO")
         window.destroy()
-        # sys.exit()
-        # os._exit(1)
+        sys.exit()
+        os._exit(1)
     window.protocol('WM_DELETE_WINDOW', on_exit)
 
     # Add a window title

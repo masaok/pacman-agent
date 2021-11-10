@@ -1,5 +1,7 @@
 # https://stackoverflow.com/questions/44790449/making-tkinter-wait-untill-button-is-pressed
 
+# The answer only: https://stackoverflow.com/a/44790799/10415969
+
 import tkinter as tk
 
 # Open a window

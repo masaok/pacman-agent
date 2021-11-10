@@ -392,11 +392,17 @@ if __name__ == "__main__":
     def on_exit():
         global window, env
         print("HELLO")
+<<<<<<< HEAD
         env._maze_ui.window.destroy()  # env window
         env._window.destroy()  # env window
         window.destroy()  # root app window
         # sys.exit()
         # os._exit(1)
+=======
+        window.destroy()
+        sys.exit()
+        os._exit(1)
+>>>>>>> ba9d9d1cc6ae42a4714d12a1bd0e42228eb2d1dd
     window.protocol('WM_DELETE_WINDOW', on_exit)
 
     # Add a window title

@@ -11,10 +11,17 @@
 - Git Bash
 - Python 3.9.8
 
-## Quickstart
+## Quickstart (Mac / Linux)
 
 ```
+$ python3 -m venv env
+$ source env/bin/activate
+$ pip install -r requirements.txt
 $ python3 -u environment.py
+```
+
+```
+$ deactivate  # exit virtual environment
 ```
 
 ## Components

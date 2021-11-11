@@ -28,11 +28,11 @@ desired_width = 80
 character = Image.open("red_ghost_trans.png")
 print(character)
 
-character = character.resize((desired_width,desired_height), Image.ANTIALIAS)
+character = character.resize((desired_width, desired_height), Image.ANTIALIAS)
 
 character = ImageTk.PhotoImage(character)
 
-canvas.create_image(100,200, anchor=NW, image=character)
+canvas.create_image(100, 200, anchor=NW, image=character)
 
 
 root.mainloop()

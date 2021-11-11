@@ -11,7 +11,13 @@
 - Git Bash
 - Python 3.9.8
 
+### MacOS 11.6 (Build 20G165)
+
+- Python 3.9.4
+
 ## Quickstart
+
+First, check out this repo and `cd` into the repo directory, then follow these steps:
 
 ```
 $ python3 -m venv env

@@ -2,11 +2,6 @@
 Environment class responsible for configuring and running the maze
 '''
 
-
-import os
-import re
-import sys
-import time
 import copy
 
 import tkinter as tk

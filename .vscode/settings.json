@@ -3,6 +3,11 @@
   "[python]": {
     "editor.defaultFormatter": "ms-python.python"
   },
+  "python.formatting.autopep8Args": [
+    "--max-line-length",
+    "100",
+    "--experimental"
+  ],
   "editor.tabSize": 4,
   "vim.otherModesKeyBindings": [
     {

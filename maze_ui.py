@@ -3,6 +3,8 @@ from tkinter import *
 
 from pprint import pprint
 
+from ui.pacman_ui import PacmanUI
+
 
 class MazeUI:
 
@@ -64,6 +66,9 @@ class MazeUI:
         self.exit_button = Button(self.window, text='Exit', width=40,
                                   height=5, bd='10', command=self.destroy)
 
+        # Initialize Pacman UI
+        self.pacman = PacmanUI(self._canvas)
+
     ##################################################################
     # Methods
     ##################################################################
@@ -106,6 +111,11 @@ class MazeUI:
                 if token == 'P':
                     self._canvas.create_rectangle(x1, y1, x2, y2, fill="black")
                     self._canvas.create_oval([x1, y1, x2, y2], fill=color)
+                elif token == '@':
+                    # self._canvas.create_rectangle(x1, y1, x2, y2, fill=color,
+                    #                               tags="area")
+                    self._canvas.create_rectangle(x1, y1, x2, y2, fill="black")
+                    self.pacman.draw_pieslice((x2 - x1) / 2 + x1, (y2 - y1) / 2 + y1)
                 else:
                     self._canvas.create_rectangle(x1, y1, x2, y2, fill=color,
                                                   tags="area")
@@ -113,7 +123,8 @@ class MazeUI:
         # Draw controls
         # TODO: Don't draw the controls every render
         self._canvas.create_rectangle(
-            0, self.canvas_height - self.controls_height, self.canvas_width, self.canvas_height, fill="black")
+            0, self.canvas_height - self.controls_height, self.canvas_width, self.canvas_height,
+            fill="black")
 
         self.btn.place(x=100, y=(self.canvas_height - self.controls_height))
         # self.exit_button.place(

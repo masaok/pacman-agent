@@ -8,7 +8,7 @@ import tkinter as tk
 from tkinter import *
 
 from constants import Constants
-from maze_agent import MazeAgent
+from ghost_agent import GhostAgent
 from pacman_agent import PacmanAgent
 from maze_ui import MazeUI
 
@@ -21,7 +21,7 @@ class Environment:
     # Constructor
     ##################################################################
 
-    def __init__(self, maze, window, tick_length=1, verbose=True, debug=True):
+    def __init__(self, maze, window, tick_length=1, verbose=True, debug=True, step=True):
         """
         Initializes the environment from a given maze, specified as an
         array of strings with maze elements
@@ -35,6 +35,7 @@ class Environment:
         self._tick_length = tick_length
         self._debug = debug
         self._verbose = verbose
+        self._step = step
 
         # Maze block sets
         self._ghosts = set()
@@ -119,7 +120,7 @@ class Environment:
 
         # Draw the Maze first, before any movement
         self._maze_ui.draw_maze()
-        if self._debug:
+        if self._step:
             # Wait for the button to be pressed to step forward
             self._maze_ui.btn.wait_variable(self._maze_ui.btn_var)
 
@@ -176,6 +177,8 @@ class Environment:
             return
 
         print("GHOSTS MOVING ...")
+        print(self._ghosts)
+
         self._move_ghosts()
         self._display()
         print("\n")
@@ -190,7 +193,7 @@ class Environment:
 
         # # MazeUI Stuff
 
-        if self._debug:
+        if self._step:
             # Wait for the button to be pressed to step forward
             # self._maze_ui.btn.wait_variable(self._maze_ui.btn_var)
             self._window.after(0, self.move)
@@ -286,7 +289,8 @@ class Environment:
         for ghost in self._ghosts.copy():
 
             # TODO: create new function for actions for ghosts
-            move = self._agent.choose_action(self._maze)
+            ghost_agent = GhostAgent(ghost)
+            move = ghost_agent.choose_action(self._maze, self._player_loc)
 
             if self._debug:
                 print("GHOST " + str(index) + ":")
@@ -395,8 +399,9 @@ if __name__ == "__main__":
     # Start the environment
     # Call with tick_length = 0 for instant games
     # TODO: Add command-line options so debug can be passed as a flag
-    debug = True
-    env = Environment(mazes[2], window, debug=debug)
+    step = True
+    debug = False
+    env = Environment(mazes[2], window, debug=debug, step=step)
 
     # Graphical
     env.move()

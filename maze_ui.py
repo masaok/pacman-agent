@@ -139,8 +139,8 @@ class MazeUI:
                     # self._canvas.create_rectangle(x1, y1, x2, y2, fill=color)
                     self.ghost.draw(x1, y1, self._block_size, self._block_size)
                 else:
-                    self._canvas.create_rectangle(x1, y1, x2, y2, fill=color,
-                                                  tags="area")
+                    self._canvas.create_rectangle(
+                        x1, y1, x2, y2, fill=color, outline="black", width=3, tags="area")
 
         # Draw controls
         # TODO: Don't draw the controls every render

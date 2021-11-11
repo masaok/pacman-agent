@@ -124,8 +124,11 @@ class MazeUI:
                 y2 = y1 + self._block_size
 
                 if token == 'P':
+                    margin = 25
                     self._canvas.create_rectangle(x1, y1, x2, y2, fill="black")
-                    self._canvas.create_oval([x1, y1, x2, y2], fill=color)
+                    self._canvas.create_oval(
+                        [x1 + margin, y1 + margin, x2 - margin, y2 - margin],
+                        fill=color)
                 elif token == '@':
                     # self._canvas.create_rectangle(x1, y1, x2, y2, fill=color,
                     #                               tags="area")

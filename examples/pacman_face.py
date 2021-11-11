@@ -7,7 +7,9 @@ class Application(Frame):
 
     # Creates an arc
     def draw_pieslice(self, canv, x, y, rad):
-        return canv.create_arc(x-rad, y-rad, x+rad, y+rad, fill='yellow', style=PIESLICE, start=self.start_angle, extent=self.stop_angle)
+        return canv.create_arc(
+            x - rad, y - rad, x + rad, y + rad, fill='yellow', style=PIESLICE, start=self.start_angle,
+            extent=self.stop_angle)
 
     # To toggle the start and extent values of the arc, such that the pacman opens and closes the mouth
     # Initially the mouth will be completely closed, but as the value is toggled we will get a 45deg space (mouth opens)

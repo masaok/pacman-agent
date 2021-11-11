@@ -1,5 +1,7 @@
 import tkinter as tk
 from tkinter import *
+from PIL import Image, ImageTk
+
 
 from pprint import pprint
 
@@ -48,6 +50,8 @@ class MazeUI:
         # Calculate x and y coordinates for the *centered* Tk root window
         x = (ws/2) - (w/2)
         y = (hs/2) - (h/2)
+        print("MAZE UI x: ", x)
+        print("MAZE UI y: ", y)
 
         # set the dimensions of the screen
         # and where it is placed
@@ -57,8 +61,14 @@ class MazeUI:
 
         self._canvas = tk.Canvas(
             self._window, height=self.canvas_height, width=self.canvas_width)
-        self._canvas.grid(row=0, column=0, sticky='w')
+        # self._canvas.grid(row=0, column=0, sticky='w')
         self._canvas.pack()
+
+        # # Test show image here
+        # self.filename = "ui/images/red_ghost_trans.png"
+        # self.image = Image.open(self.filename)
+        # new_image = ImageTk.PhotoImage(self.image)
+        # self._canvas.create_image(0, 0, anchor=NW, image=new_image)
 
         # Draw controls
         # TODO: Don't draw the controls every render
@@ -71,6 +81,8 @@ class MazeUI:
         # Initialize Pacman UI
         self.pacman = PacmanUI(self._canvas)
         self.ghost = GhostUI(self._canvas)
+
+        self._window.update()
 
     ##################################################################
     # Methods

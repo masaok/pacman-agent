@@ -8,26 +8,26 @@ from PIL import Image, ImageTk
 win = Tk()
 
 # Set the geometry of tkinter frame
-win.geometry("750x600")
+# win.geometry("600x600")
 
 # Create a canvas
-canvas = Canvas(win, width=600, height=600)
+canvas = Canvas(win, width=500, height=400)
 
 # What does pack do?
 # https://riptutorial.com/tkinter/example/29712/pack--
 canvas.pack()
 
 # Load an image in the script
-img = (Image.open("red_ghost_trans.png"))
+img = (Image.open("../images/red_ghost_trans.png"))
 print("img: ", img)
 
 # Resize the Image using resize method
-resized_image = img.resize((300, 300), Image.ANTIALIAS)
-print("resized: ", resized_image)
-new_image = ImageTk.PhotoImage(resized_image)
-print("new_image: ", new_image)
+img = img.resize((200, 200), Image.ANTIALIAS)
+print("resized: ", img)
+img = ImageTk.PhotoImage(img)
+print("new_image: ", img)
 
 # Add image to the Canvas Items
-canvas.create_image(10, 10, anchor=NW, image=new_image)
+canvas.create_image(0, 0, anchor=NW, image=img)
 
 win.mainloop()

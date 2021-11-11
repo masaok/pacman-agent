@@ -5,11 +5,14 @@ Environment class responsible for configuring and running the maze
 import copy
 
 import tkinter as tk
+from tkinter import *
 
 from constants import Constants
 from maze_agent import MazeAgent
 from pacman_agent import PacmanAgent
 from maze_ui import MazeUI
+
+# from PIL import Image, ImageTk
 
 
 class Environment:
@@ -73,32 +76,31 @@ class Environment:
 
         # Initialize MazeAgent here
         self._agent = PacmanAgent()
+        self._index = 0  # keep track of which loop we're on
 
-        self._index = 0
+        # Graphics Test
 
-        # self._maze_ui = MazeUI(maze)
+        # window.geometry("600x600")
+        # canvas = Canvas(window, width=500, height=300)
+        # # canvas.pack()
+
+        # self.filename = "ui/images/red_ghost_trans.png"
+        # # img = Image.open(self.filename)
+        # img = PhotoImage(file=self.filename)
+        # canvas.create_image(0, 0, image=img)
+        # # img = ImageTk.PhotoImage(img)
+
+        # # canvas.create_image(0, 0, anchor=NW, image=img)
+        # canvas.create_rectangle(0, 0, 80, 80, fill="purple")
+        # # canvas.create_image(0, 0, anchor=NW, image=img)
+        # # canvas.create_rectangle(100, 100, 80, 80, fill="pink")
+        # # canvas.create_rectangle(300, 300, 80, 80, fill="green")
+
+        # window.update()
 
         # Graphics GUI Stuff (tk)
-
         self._window = window
         self._maze_ui = MazeUI(self._window, self._maze)
-        # self._window = tk.Tk()
-        # self._window.geometry("500x500")
-
-        # self._canvas = tk.Canvas(self._window, height=500, width=500)
-        # self._canvas.grid(row=0, column=0, sticky='w')
-
-        # coord = [x, y, x+width, y+height]
-        # self._circle = self._canvas.create_oval(
-        #     coord, outline="red", fill="red")
-
-        # coord = [x, y, x+40, y+40]
-        # self._rect2 = self._canvas.create_rectangle(
-        #     coord, outline="Blue", fill="Blue")
-
-        # self._move()
-
-        # self._window.mainloop()
 
     ##################################################################
     # Methods
@@ -205,7 +207,10 @@ class Environment:
         """
         (x, y) = loc
         pos_locs = [(x+offset, y), (x-offset, y), (x, y+offset), (x, y-offset)]
-        return list(filter(lambda loc: loc[0] >= 0 and loc[1] >= 0 and loc[0] < self._cols and loc[1] < self._rows, pos_locs))
+        return list(
+            filter(
+                lambda loc: loc[0] >= 0 and loc[1] >= 0 and loc[0] < self._cols and loc[1] <
+                self._rows, pos_locs))
 
     def _get_wrn_set(self, wrn_list):
         return {item for sublist in wrn_list for item in sublist if item not in self._spcl}
@@ -379,7 +384,6 @@ if __name__ == "__main__":
         env._maze_ui.btn_var.set("")
         exit(0)
 
-    agent = PacmanAgent()
     window = tk.Tk()
     window.protocol('WM_DELETE_WINDOW', on_exit)
 

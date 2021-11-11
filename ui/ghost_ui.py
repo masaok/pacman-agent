@@ -11,13 +11,13 @@ class GhostUI:
         self.image = Image.open(self.filename)
 
     def draw(self, x, y, w, h):
-        # self.canvas.create_rectangle(x, y, x + 80, y + 80, fill="green")
+        self.canvas.create_rectangle(x, y, x + 80, y + 80, fill="green")
         self.canvas.pack()
 
-        print("x: ", x)
-        print("y: ", y)
-        print("w: ", w)
-        print("h: ", h)
+        # print("x: ", x)
+        # print("y: ", y)
+        # print("w: ", w)
+        # print("h: ", h)
         # print(self.image)
 
         # self.image = self.image.resize((w, h), Image.ANTIALIAS)

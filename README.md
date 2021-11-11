@@ -11,11 +11,12 @@
 - Git Bash
 - Python 3.9.8
 
-## Quickstart (Mac / Linux)
+## Quickstart
 
 ```
 $ python3 -m venv env
-$ source env/bin/activate
+$ source env/Script/activate  # Windows Git Bash only
+$ source env/bin/activate     # Mac / Linux only
 $ pip install -r requirements.txt
 $ python3 -u environment.py
 ```

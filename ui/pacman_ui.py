@@ -12,15 +12,15 @@ from constants import Constants
 class PacmanUI:
     def __init__(self, canvas):
         self.canvas = canvas
-        self.start_angle = 45
-        self.stop_angle = 270
+        self.start_angle = 45   # zero is east
+        self.stop_angle = 270   # relative to start angle counter clockwise
 
-        self.start_dead_angle = 315
-        self.stop_dead_angle = 270
+        self.start_dead_angle = 315  # zero is east
+        self.stop_dead_angle = 270   # relative to start angle counter clockwise
 
         self.x = 100
         self.y = 240
-        self.rad = 30
+        self.rad = 35  # radius
 
     # Creates an arc
     def draw(self, token, x, y):

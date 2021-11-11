@@ -3,6 +3,7 @@ Environment class responsible for configuring and running the maze
 '''
 
 import copy
+import time
 
 import tkinter as tk
 from tkinter import *
@@ -13,6 +14,8 @@ from pacman_agent import PacmanAgent
 from maze_ui import MazeUI
 
 # from PIL import Image, ImageTk
+
+import argparse
 
 
 class Environment:
@@ -148,7 +151,7 @@ class Environment:
             print("PACMAN MOVED AND HIT A GHOST!  DONE!")
             print(self._player_loc)
             self._insert_block(self._player_loc, Constants.DEATH_BLOCK)
-            self._maze_ui.draw_maze()
+            self._cleanup()
             return
 
         print("GHOSTS MOVING ...")
@@ -161,7 +164,7 @@ class Environment:
             print("GHOSTS MOVED AND HIT PACMAN!  DONE!")
             print(self._player_loc)
             self._insert_block(self._player_loc, Constants.DEATH_BLOCK)
-            self._maze_ui.draw_maze()
+            self._cleanup()
             return
 
         # if self._verbose:
@@ -179,6 +182,11 @@ class Environment:
     ##################################################################
     # "Private" Helper Methods
     ##################################################################
+    def _cleanup(self):
+        if not self._step:
+            # One more sleep before death if in animation mode
+            time.sleep(self._tick_length)
+        self._maze_ui.draw_maze()  # Draw the final maze
 
     def _get_adjacent(self, loc, offset):
         """
@@ -322,6 +330,30 @@ class Environment:
 # Appears here to avoid circular dependency
 
 if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description='Pacman Trainer Deep Learning GUI')
+    parser.add_argument(
+        '--animate', '-a',
+        action='store_true',
+        help='Animate (disable stepping through the animation)'
+    )
+    parser.add_argument(
+        '--debug', '-d',
+        action='store_true',
+        default=False,
+        help='Show debug output'
+    )
+    parser.add_argument(
+        '--step', '-s',
+        action='store_true',
+        help='Step through each cycle of animation (default)'
+    )
+    args = parser.parse_args()
+    print("args: " + str(args))
+
+    if args.animate:
+        args.step = False
+
     """
     Some example mazes with associated difficulties are
     listed below. The score thresholds given are for agents that actually use logic.
@@ -352,8 +384,8 @@ if __name__ == "__main__":
          "X..P....X",
          "X.G..G..X",
          "X.P.P.P.X",
-         "XP.G...PX",
-         "X...@...X",
+         "XP.....PX",
+         "XG..@...X",
          "XXXXXXXXX"],
     ]
 
@@ -377,11 +409,14 @@ if __name__ == "__main__":
     # TODO: Add command-line options so debug can be passed as a flag
     step = True
     debug = False
-    env = Environment(mazes[2], window, debug=debug, step=step)
+    env = Environment(mazes[2], window, debug=args.debug, step=args.step)
 
     # Graphical
     env.move()
+    print("END MAIN MOVE")
+
     window.mainloop()
+    print("END MAIN LOOP")
 
     # Command-line
     # env.start_mission()

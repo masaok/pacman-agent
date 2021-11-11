@@ -45,3 +45,4 @@ class Constants:
     PELLET_BLOCK = "P"
     SAFE_BLOCK = "."
     PLR_BLOCK = "@"
+    DEATH_BLOCK = "D"

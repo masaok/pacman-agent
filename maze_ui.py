@@ -5,6 +5,7 @@ from PIL import Image, ImageTk
 
 from pprint import pprint
 
+from constants import Constants
 from ui.pacman_ui import PacmanUI
 from ui.ghost_ui import GhostUI
 
@@ -104,17 +105,17 @@ class MazeUI:
                 # print("ROW: ", row, " COL: ", col, " TOKEN: ", token)
 
                 color = "black"
-                if token == '@':
+                if token == Constants.PLR_BLOCK:
                     color = "yellow"
-                elif token == '.':
+                elif token == Constants.SAFE_BLOCK:
                     color = "black"
-                elif token == 'G':
+                elif token == Constants.GHOST_BLOCK:
                     color = "pink"
-                elif token == 'P':
+                elif token == Constants.PELLET_BLOCK:
                     color = "white"
-                elif token == 'E':
-                    color = "green"
-                elif token == 'X':
+                elif token == Constants.DEATH_BLOCK:
+                    color = "red"
+                elif token == Constants.WALL_BLOCK:
                     color = "blue"
 
                 x1 = (col * self._block_size)
@@ -129,11 +130,11 @@ class MazeUI:
                     self._canvas.create_oval(
                         [x1 + margin, y1 + margin, x2 - margin, y2 - margin],
                         fill=color)
-                elif token == '@':
+                elif token == Constants.PLR_BLOCK or token == Constants.DEATH_BLOCK:
                     # self._canvas.create_rectangle(x1, y1, x2, y2, fill=color,
                     #                               tags="area")
                     self._canvas.create_rectangle(x1, y1, x2, y2, fill="black")
-                    self.pacman.draw_pieslice((x2 - x1) / 2 + x1, (y2 - y1) / 2 + y1)
+                    self.pacman.draw(token, (x2 - x1) / 2 + x1, (y2 - y1) / 2 + y1)
                 elif token == 'G':
                     self._canvas.create_rectangle(x1, y1, x2, y2, fill="black")
                     # self._canvas.create_rectangle(x1, y1, x2, y2, fill=color)

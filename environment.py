@@ -39,7 +39,6 @@ class Environment:
 
         # Maze block sets
         self._ghosts = set()
-        self._goals = set()
         self._pellets = set()
         self._walls = set()
 
@@ -59,7 +58,7 @@ class Environment:
                 if cell == Constants.PLR_BLOCK:
                     self._player_loc = self._initial_loc = (col_num, row_num)
 
-        self._spcl = self._pellets | self._goals | self._walls
+        self._spcl = self._pellets | self._walls
         self._wrn1_tiles = self._get_wrn_set(
             [self._get_adjacent(loc, 1) for loc in self._pellets])
         self._wrn2_tiles = self._get_wrn_set(
@@ -113,9 +112,6 @@ class Environment:
         """
         return self._player_loc
 
-    def get_goal_loc(self):
-        return next(iter(self._goals))
-
     def move(self):
 
         # Draw the Maze first, before any movement
@@ -130,28 +126,12 @@ class Environment:
         print("GHOSTS:")
         print(self._ghosts)
 
-        # if (self._index >= 1):  # run after 1 second
-        #     self._canvas.delete('all')
-
-        # if (self._index >= 2):
-        #     self._window.destroy()
-
         self._index += 1
 
         # Get player's next move in their plan, then execute
         next_act = self._agent.choose_action(self._maze)
         print("next_act: ", next_act)
         self._move_request(next_act)
-
-        # Return a perception for the agent to think about and plan next
-        # perception = {"loc": self._player_loc, "tile": self._ag_tile}
-        # self._agent.choose_action(perception)
-
-        # Assess the post-move penalty and whether or not the game is complete
-        # if self._pellet_test(self._player_loc):
-        #     print("PELLET EATEN!!!")
-        #     self._pellets_eaten += Constants.get_pellet_reward()
-        # print("PELLET SCORE:", self._pellets_eaten)
 
         penalty = Constants.get_mov_penalty()
         self._score -= penalty
@@ -167,12 +147,7 @@ class Environment:
         if self._ghost_test(self._player_loc):
             print("PACMAN MOVED AND HIT A GHOST!  DONE!")
             print(self._player_loc)
-            self._maze_ui.draw_maze()
-            return
-
-        if self._goal_test(self._player_loc):
-            print("PACMAN HIT THE GOAL!  DONE!")
-            print(self._player_loc)
+            self._insert_block(self._player_loc, Constants.DEATH_BLOCK)
             self._maze_ui.draw_maze()
             return
 
@@ -185,6 +160,7 @@ class Environment:
         if self._ghost_test(self._player_loc):
             print("GHOSTS MOVED AND HIT PACMAN!  DONE!")
             print(self._player_loc)
+            self._insert_block(self._player_loc, Constants.DEATH_BLOCK)
             self._maze_ui.draw_maze()
             return
 
@@ -229,9 +205,6 @@ class Environment:
 
     def _ghost_test(self, loc):
         return loc in self._ghosts
-
-    def _goal_test(self, loc):
-        return loc in self._goals
 
     def _pellet_test(self, loc):
         result = loc in self._pellets
@@ -282,6 +255,9 @@ class Environment:
 
         # Agent "tile" -- what is an agent tile?
         # self._ag_tile = self._og_maze[new_loc[1]][new_loc[0]]
+
+    def _insert_block(self, location, block):
+        self._maze[location[1]][location[0]] = block
 
     def _move_ghosts(self):
 

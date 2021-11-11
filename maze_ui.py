@@ -4,6 +4,7 @@ from tkinter import *
 from pprint import pprint
 
 from ui.pacman_ui import PacmanUI
+from ui.ghost_ui import GhostUI
 
 
 class MazeUI:
@@ -57,6 +58,7 @@ class MazeUI:
         self._canvas = tk.Canvas(
             self._window, height=self.canvas_height, width=self.canvas_width)
         self._canvas.grid(row=0, column=0, sticky='w')
+        self._canvas.pack()
 
         # Draw controls
         # TODO: Don't draw the controls every render
@@ -68,6 +70,7 @@ class MazeUI:
 
         # Initialize Pacman UI
         self.pacman = PacmanUI(self._canvas)
+        self.ghost = GhostUI(self._canvas)
 
     ##################################################################
     # Methods
@@ -116,6 +119,10 @@ class MazeUI:
                     #                               tags="area")
                     self._canvas.create_rectangle(x1, y1, x2, y2, fill="black")
                     self.pacman.draw_pieslice((x2 - x1) / 2 + x1, (y2 - y1) / 2 + y1)
+                elif token == 'G':
+                    self._canvas.create_rectangle(x1, y1, x2, y2, fill="black")
+                    # self._canvas.create_rectangle(x1, y1, x2, y2, fill=color)
+                    self.ghost.draw(x1, y1, self._block_size, self._block_size)
                 else:
                     self._canvas.create_rectangle(x1, y1, x2, y2, fill=color,
                                                   tags="area")

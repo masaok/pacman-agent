@@ -1,3 +1,8 @@
+# Pacman's "Face" UI
+
+# Credit: https://stackoverflow.com/questions/8176599/drawing-pacmans-face-in-tkinter
+
+# TODO: Make the face toggle open and close on each move
 
 from tkinter import *
 

@@ -7,38 +7,39 @@ Maze Pitfall problem
 import time
 import random
 from pathfinder import *
-from maze_problem import *
+# from maze_problem import *
 from queue import Queue
 
 # [!] TODO: import your Problem 1 when ready here!
 
+
 class PacmanAgent:
-    
+
     ##################################################################
     # Constructor
     ##################################################################
-    
-    def __init__ (self):
+
+    def __init__(self):
         # self.env  = env
         # self.loc  = env.get_player_loc()
         # self.goal = env.get_goal_loc()
-        
+
         # The agent's maze can be manipulated as a tracking mechanic
         # for what it has learned; changes to this maze will be drawn
         # by the environment and is simply for visuals
         # self.maze = env.get_agent_maze()
-        
+
         # The agent's plan will be a queue storing the sequence of
         # actions that the environment will execute
         self.plan = Queue()
-        
+
         # [!] TODO: Initialize any other knowledge-related attributes for
         # agent here, or any other record-keeping attributes you'd like
-    
-    
+
     ##################################################################
     # Methods
     ##################################################################
+
     def choose_action(self, perception):
         """
         Returns an action from a set {U, D, L, R} given perception (maze)
@@ -53,8 +54,5 @@ class PacmanAgent:
         """
 
         directions = ["U", "D", "L", "R"]
-        random_index = random.randint(0,len(directions)-1)
+        random_index = random.randint(0, len(directions)-1)
         return directions[random_index]
-
-
-    

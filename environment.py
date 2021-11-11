@@ -1,6 +1,5 @@
 '''
-Environment class responsible for configuring and running
-the MazePitfall problem with BlindBot agent
+Environment class responsible for configuring and running the maze
 '''
 
 
@@ -49,13 +48,11 @@ class Environment:
         self._score = 0
         self._pellets_eaten = 0
 
-        # Scan for pits and goals in the input maze
+        # Scan for blocks in the input maze
         for (row_num, row) in enumerate(maze):
             for (col_num, cell) in enumerate(row):
                 if cell == Constants.WALL_BLOCK:
                     self._walls.add((col_num, row_num))
-                if cell == Constants.END_BLOCK:
-                    self._goals.add((col_num, row_num))
                 if cell == Constants.GHOST_BLOCK:
                     self._ghosts.add((col_num, row_num))
                 if cell == Constants.PELLET_BLOCK:
@@ -78,11 +75,6 @@ class Environment:
         self._og_maze = copy.deepcopy(self._maze)
         self._og_maze[self._player_loc[1]
                       ][self._player_loc[0]] = Constants.SAFE_BLOCK
-
-        for (c, r) in self._wrn2_tiles:
-            self._og_maze[r][c] = Constants.WRN_BLOCK_2
-        for (c, r) in self._wrn1_tiles:
-            self._og_maze[r][c] = Constants.WRN_BLOCK_1
 
         # Initialize MazeAgent here
         self._agent = PacmanAgent()
@@ -176,12 +168,14 @@ class Environment:
 
         if self._ghost_test(self._player_loc):
             print("PACMAN MOVED AND HIT A GHOST!  DONE!")
-            # self._window.destroy()
+            print(self._player_loc)
+            self._maze_ui.draw_maze()
             return
 
         if self._goal_test(self._player_loc):
             print("PACMAN HIT THE GOAL!  DONE!")
-            # self._window.destroy()
+            print(self._player_loc)
+            self._maze_ui.draw_maze()
             return
 
         print("GHOSTS MOVING ...")
@@ -190,7 +184,8 @@ class Environment:
         print("\n")
         if self._ghost_test(self._player_loc):
             print("GHOSTS MOVED AND HIT PACMAN!  DONE!")
-            # self._window.destroy()
+            print(self._player_loc)
+            self._maze_ui.draw_maze()
             return
 
         # if self._verbose:
@@ -249,14 +244,6 @@ class Environment:
             print("PELLETS SET AFTER:")
             print(self._pellets)
         return result
-
-    def _make_agent_maze(self):
-        """
-        Converts the 'true' maze into one with hidden tiles (?) for the agent
-        to update as it learns
-        """
-        sub_regexp = "[" + Constants.PELLET_BLOCK + Constants.SAFE_BLOCK + "]"
-        return [list(re.sub(sub_regexp, Constants.UNK_BLOCK, r)) for r in self._maze]
 
     def _move_request(self, move):
         old_loc = self._player_loc
@@ -373,7 +360,7 @@ if __name__ == "__main__":
 
         # Medium difficulty: Score > -30
         ["XXXXXXXXX",
-         "X..PEP..X",
+         "X..P.P..X",
          "X.......X",
          "X..P.P..X",
          "X.......X",
@@ -382,32 +369,23 @@ if __name__ == "__main__":
 
         # Hard difficulty: Score > -35
         ["XXXXXXXXX",
-         "X..PE...X",
-         "X.......X",
+         "X..P....X",
+         "X.G..G..X",
          "X.P.P.P.X",
-         "XP.....PX",
+         "XP.G...PX",
          "X...@...X",
          "XXXXXXXXX"],
     ]
 
-    agent = PacmanAgent()
-
-    window = tk.Tk()
-
     # Exit the Python app cleanly in terminal
     # Credit: https://stackoverflow.com/q/69917376/10415969
     def on_exit():
-        global window, env
-        print("HELLO")
         env._maze_ui.window.destroy()  # env window
-        # env._window.destroy()  # env window
-        # window.destroy()  # root app window
-        # exit()
-        # sys.exit()
-        # os._exit(1)
-        # raise SystemExit
         env._maze_ui.btn_var.set("")
         exit(0)
+
+    agent = PacmanAgent()
+    window = tk.Tk()
     window.protocol('WM_DELETE_WINDOW', on_exit)
 
     # Add a window title

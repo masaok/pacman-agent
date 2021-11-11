@@ -11,8 +11,9 @@ import queue
 import unittest
 import itertools
 import math
-from maze_problem import *
+# from maze_problem import *
 from search_tree_node import *
+
 
 def _get_solution(node):
     """
@@ -28,6 +29,7 @@ def _get_solution(node):
     soln.reverse()
     return (cum_cost, soln)
 
+
 def heuristic(state, goal):
     """
     Implements the Manhattan Distance Heuristic, which (given a state)
@@ -36,6 +38,7 @@ def heuristic(state, goal):
     :goal: A maze location tuple
     """
     return abs(state[0] - goal[0]) + abs(state[1] - goal[1])
+
 
 def pathfind(problem, start, dest):
     """
@@ -47,33 +50,33 @@ def pathfind(problem, start, dest):
     :dest: A maze location tuple
     """
     # Setup
-    frontier  = queue.PriorityQueue()
+    frontier = queue.PriorityQueue()
     closedSet = set()
-    
+
     # Search!
     frontier.put(SearchTreeNode(start, None, None, 0, heuristic(start, dest)))
     while not frontier.empty():
         # Get front node of priority queue
         expanding = frontier.get()
-        
+
         # Test for goal state
         if expanding.state == dest:
             return _get_solution(expanding)
-        
+
         # Compute evaluation function for expanded node, f(n) = g(n) + h(n)
         evaluation = expanding.evaluation()
-        
+
         # Add expanded node to closedSet
         closedSet.add(expanding.state)
-        
+
         # Generate new nodes on frontier
         for (action, cost, nextState) in problem.transitions(expanding.state):
             childTotalCost = expanding.totalCost + cost
             childHeuristicCost = heuristic(nextState, dest)
             if nextState in closedSet:
                 continue
-            frontier.put(SearchTreeNode(nextState, action, expanding, childTotalCost, childHeuristicCost))
-    
+            frontier.put(SearchTreeNode(nextState, action,
+                         expanding, childTotalCost, childHeuristicCost))
+
     # No solution
     return None
-

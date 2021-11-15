@@ -383,7 +383,7 @@ if __name__ == "__main__":
         ["XXXXXXXXX",
          "X..P....X",
          "X.G..G..X",
-         "X.P.P.P.X",
+         "X..XXXP.X",
          "XP.....PX",
          "XG..@...X",
          "XXXXXXXXX"],

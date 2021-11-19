@@ -21,7 +21,7 @@ class GhostUI:
         self.cy = 0  # center of the block
 
         self.upper_body_height = 10  # above the center
-        self.lower_body_height = 10  # below the center
+        self.lower_body_height = 11  # below the center
 
         self.eye_radius = 6
         self.eye_height_offset = 5
@@ -95,11 +95,11 @@ class GhostUI:
         self.draw_head(x, y, w, h)
 
         # Draw the body
-        x1 = cx - self.rad
+        x1 = cx - self.rad + 1  # small adjustment to line up the body with the head (on Mac)
         x2 = cx + self.rad
 
-        y1 = cy - 10
-        y2 = cy + 10
+        y1 = cy - self.upper_body_height
+        y2 = cy + self.lower_body_height
 
         self.canvas.create_rectangle(
             x1, y1, x2, y2, fill=color, width=0)

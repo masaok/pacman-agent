@@ -27,12 +27,12 @@ class MazeGen:
         return best_act
 
     @staticmethod
-    def _get_new_maze (maze, n_ghosts, n_pellets, legal_positions):
+    def _get_new_maze (maze, n_ghosts, n_pellets, legal_positions, pellet_positions):
         result = dict()
-        positions = random.sample(legal_positions, n_ghosts + n_pellets + 1)
+        positions = random.sample(legal_positions, n_ghosts + 1)
         result["positions"] = {
+            "pellets": random.sample(pellet_positions, random.sample(range(1,n_pellets+1), 1)[0]),
             "ghosts": positions[0:n_ghosts],
-            "pellets": positions[n_ghosts:n_ghosts+n_pellets],
             "pacman": positions[-1:]
         }
         new_maze = maze.copy()
@@ -52,6 +52,7 @@ class MazeGen:
         rows, cols = len(base_maze), len(base_maze[0])
         n_ghosts = n_pellets = 0
         legal_positions = []
+        pellet_positions = []
         
         # Process original maze contents
         for r in range(rows):
@@ -59,12 +60,13 @@ class MazeGen:
                 curr_cell = maze[r][c]
                 if (curr_cell == "P"):
                     n_pellets += 1
+                    pellet_positions.append((c, r))
                 if (curr_cell == "G"):
                     n_ghosts += 1
-                if (curr_cell != "X"):
+                if (curr_cell != "X" and curr_cell != "P"):
                     legal_positions.append((c, r))
         
-        training_mazes  = [MazeGen._get_new_maze(base_maze, n_ghosts, n_pellets, legal_positions) for _ in range(n_samples)]
+        training_mazes  = [MazeGen._get_new_maze(base_maze, n_ghosts, n_pellets, legal_positions, pellet_positions) for _ in range(n_samples)]
         training_labels = [MazeGen._generate_label(m["maze"], m["positions"]) for m in training_mazes]
         training_mazes  = [m["maze"] for m in training_mazes]
         full_training   = {"X": training_mazes, "y": training_labels}
@@ -73,12 +75,13 @@ class MazeGen:
 if __name__ == "__main__":
     maze = ["XXXXXXXXX",
             "X..P....X",
-            "X.G..G..X",
+            "X.......X",
             "X..XXXP.X",
             "XP.....PX",
             "X...@...X",
             "XXXXXXXXX"]
     
+    pd.set_option('display.max_rows', None)
     result = MazeGen.get_labeled_data(maze, 100)
-    print(result)
+    print(result.explode("X"))
     

@@ -26,21 +26,21 @@ class Constants:
         """
         Returns the reward of stepping on a pellet
         """
-        return 1
+        return 0.5
 
     @staticmethod
     def get_mov_penalty():
         """
         Returns the cost of a movement onto any safe tile
         """
-        return -1
+        return 1
     
     @staticmethod
     def get_ghost_penalty():
         """
         Returns the cost of a movement onto a ghost
         """
-        return -20
+        return 20
 
     # Movement constants + location modifiers
     MOVES = ["U", "D", "L", "R"]

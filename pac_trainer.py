@@ -52,15 +52,14 @@ class PacNet(nn.Module):
         entities = len(Constants.ENTITIES)
         moves = len(Constants.MOVES)
         self.linear_relu_stack = nn.Sequential(
-            nn.Linear(rows * cols * entities, 20),
+            nn.Linear(rows * cols * entities, 256),
             nn.ReLU(),
-            nn.Linear(20, moves),
+            nn.Linear(256, 128),
             nn.ReLU(),
-            nn.Softmax()
+            nn.Linear(128, moves),
         )
 
     def forward(self, x):
-#         x = self.flatten(x)
         logits = self.linear_relu_stack(x)
         return logits
 
@@ -84,13 +83,13 @@ def train_loop(dataloader, model, loss_fn, optimizer):
 if __name__ == "__main__":
     maze = ["XXXXXXXXX",
             "X..P....X",
-            "X.G..G..X",
+            "X.......X",
             "X..XXXP.X",
             "XP.....PX",
             "X...@...X",
             "XXXXXXXXX"]
     
-    result = MazeGen.get_labeled_data(maze, 3000)
+    result = MazeGen.get_labeled_data(maze, 10000)
     data = PacmanMazeDataset(result)
     train_dataloader = DataLoader(data, batch_size=4, shuffle=True)
     train_features, train_labels = next(iter(train_dataloader))
@@ -99,11 +98,10 @@ if __name__ == "__main__":
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model = PacNet(maze).to(device)
     
-    
     # Optimization
     learning_rate = 1e-3
     batch_size = 64
-    epochs = 500
+    epochs = 100
     loss_fn = nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
     for t in range(epochs):

@@ -6,11 +6,12 @@ Maze Pitfall problem
 
 import time
 import random
+import torch
+from torch import nn
 from pathfinder import *
-# from maze_problem import *
 from queue import Queue
-
-# [!] TODO: import your Problem 1 when ready here!
+from constants import *
+# [!] TODO: import your trained model when ready here!
 
 
 class PacmanAgent:
@@ -19,18 +20,11 @@ class PacmanAgent:
     # Constructor
     ##################################################################
 
-    def __init__(self):
-        # self.env  = env
-        # self.loc  = env.get_player_loc()
-        # self.goal = env.get_goal_loc()
-
-        # The agent's maze can be manipulated as a tracking mechanic
-        # for what it has learned; changes to this maze will be drawn
-        # by the environment and is simply for visuals
-        # self.maze = env.get_agent_maze()
-
+    def __init__(self, maze):
         # The agent's plan will be a queue storing the sequence of
         # actions that the environment will execute
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.model = PacNet(maze).to(device)
         self.plan = Queue()
 
         # [!] TODO: Initialize any other knowledge-related attributes for
@@ -53,6 +47,5 @@ class PacmanAgent:
             str: direction to move
         """
 
-        directions = ["U", "D", "L", "R"]
-        random_index = random.randint(0, len(directions)-1)
-        return directions[random_index]
+        random_index = random.randint(0, len(Constants.MOVES)-1)
+        return Constants.MOVES[random_index]

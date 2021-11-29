@@ -15,7 +15,7 @@ class MazeProblem:
     # Static COST_MAP for maze components and the cost to move onto them
     # Any maze block not listed here is assumed to have a cost of 1
     # HINT: You can add block types to this!
-    COST_MAP = {Constants.PELLET_BLOCK: Constants.get_pit_penalty()}
+    COST_MAP = {Constants.GHOST_BLOCK: Constants.get_ghost_penalty()}
     
     
     ##################################################################

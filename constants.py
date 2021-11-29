@@ -1,5 +1,5 @@
 '''
-Simulation / Maze constants important for the BlindBot problem
+Simulation / Maze constants important for the Pacman problem
 
 [!] IMPORTANT:
   - YOU MUST NOT TOUCH THIS FILE AT ALL, NO EDITS OR ADDITIONS!
@@ -33,7 +33,14 @@ class Constants:
         """
         Returns the cost of a movement onto any safe tile
         """
-        return 1
+        return -1
+    
+    @staticmethod
+    def get_ghost_penalty():
+        """
+        Returns the cost of a movement onto a ghost
+        """
+        return -20
 
     # Movement constants + location modifiers
     MOVES = ["U", "D", "L", "R"]
@@ -46,3 +53,4 @@ class Constants:
     SAFE_BLOCK = "."
     PLR_BLOCK = "@"
     DEATH_BLOCK = "D"
+    ENTITIES = [WALL_BLOCK, GHOST_BLOCK, PELLET_BLOCK, SAFE_BLOCK, PLR_BLOCK]

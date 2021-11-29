@@ -78,7 +78,7 @@ class Environment:
                       ][self._player_loc[0]] = Constants.SAFE_BLOCK
 
         # Initialize MazeAgent here
-        self._agent = PacmanAgent()
+        self._agent = PacmanAgent(maze)
         self._index = 0  # keep track of which loop we're on
 
         # Graphics Test
@@ -327,8 +327,6 @@ class Environment:
             index += 1
 
 
-# Appears here to avoid circular dependency
-
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Pacman Trainer Deep Learning GUI')
@@ -385,7 +383,7 @@ if __name__ == "__main__":
          "X.G..G..X",
          "X..XXXP.X",
          "XP.....PX",
-         "XG..@...X",
+         "X...@...X",
          "XXXXXXXXX"],
     ]
 

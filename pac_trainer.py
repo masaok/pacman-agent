@@ -52,11 +52,11 @@ class PacNet(nn.Module):
         entities = len(Constants.ENTITIES)
         moves = len(Constants.MOVES)
         self.linear_relu_stack = nn.Sequential(
-            nn.Linear(rows * cols * entities, 256),
+            nn.Linear(rows * cols * entities, 128),
             nn.ReLU(),
-            nn.Linear(256, 128),
+            nn.Linear(128, 56),
             nn.ReLU(),
-            nn.Linear(128, moves),
+            nn.Linear(56, moves),
         )
 
     def forward(self, x):

@@ -12,6 +12,7 @@ from constants import Constants
 from ghost_agent import GhostAgent
 from pacman_agent import PacmanAgent
 from maze_ui import MazeUI
+from maze_problem import MazeProblem
 
 # from PIL import Image, ImageTk
 
@@ -132,7 +133,8 @@ class Environment:
         self._index += 1
 
         # Get player's next move in their plan, then execute
-        next_act = self._agent.choose_action(self._maze)
+        mp = MazeProblem(self._maze)
+        next_act = self._agent.choose_action(self._maze, mp.legal_actions(self.get_player_loc()))
         print("next_act: ", next_act)
         self._move_request(next_act)
 

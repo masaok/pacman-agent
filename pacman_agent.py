@@ -38,7 +38,7 @@ class PacmanAgent:
     # Methods
     ##################################################################
 
-    def choose_action(self, perception):
+    def choose_action(self, perception, legal_actions):
         """
         Returns an action from a set {U, D, L, R} given perception (maze)
         Currently returns a random choice
@@ -51,9 +51,7 @@ class PacmanAgent:
             str: direction to move
         """
         maze_vectorized = PacmanMazeDataset.vectorize_maze(perception)
-        print("---------------------------------------------------")
-        move_probs = self.model.forward(maze_vectorized)
-        print(move_probs)
-        move_probs = list(move_probs)
-        print(move_probs)
-        return Constants.MOVES[np.argmax(move_probs)]
+        move_probs = list(self.model.forward(maze_vectorized))
+        move_probs = {move: move_probs[moveIdx] for moveIdx, move in enumerate(Constants.MOVES)}
+        move_probs = {move: prob for (move, prob) in move_probs.items() if move in {s[0] for s in legal_actions}}
+        return max(move_probs, key=move_probs.get) if len(move_probs) > 0 else random.choice(legal_actions.keys())

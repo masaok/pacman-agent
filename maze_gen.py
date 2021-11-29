@@ -10,6 +10,9 @@ from maze_problem import MazeProblem
 from pathfinder import *
 from constants import Constants
 
+# Whether or not pellets are in new, different positions for each generated maze
+RAND_PELLETS = False
+
 class MazeGen:
     
     # TODO: If not behaving well, issue might be how the label is being selected
@@ -27,12 +30,12 @@ class MazeGen:
         return best_act
 
     @staticmethod
-    def _get_new_maze (maze, n_ghosts, n_pellets, legal_positions, pellet_positions):
+    def _get_new_maze (maze, n_ghosts, n_pellets, legal_positions, pellet_positions, rand_pellets):
         result = dict()
-        positions = random.sample(legal_positions, n_ghosts + 1)
+        positions = random.sample(legal_positions, n_ghosts + 1 if not rand_pellets else n_ghosts + n_pellets + 1)
         result["positions"] = {
-            "pellets": random.sample(pellet_positions, random.sample(range(1,n_pellets+1), 1)[0]),
             "ghosts": positions[0:n_ghosts],
+            "pellets": random.sample(pellet_positions if not rand_pellets else positions[n_ghosts:n_ghosts+n_pellets], random.sample(range(1,n_pellets+1), 1)[0]),
             "pacman": positions[-1:]
         }
         new_maze = maze.copy()
@@ -66,7 +69,7 @@ class MazeGen:
                 if (curr_cell != "X" and curr_cell != "P"):
                     legal_positions.append((c, r))
         
-        training_mazes  = [MazeGen._get_new_maze(base_maze, n_ghosts, n_pellets, legal_positions, pellet_positions) for _ in range(n_samples)]
+        training_mazes  = [MazeGen._get_new_maze(base_maze, n_ghosts, n_pellets, legal_positions, pellet_positions, RAND_PELLETS) for _ in range(n_samples)]
         training_labels = [MazeGen._generate_label(m["maze"], m["positions"]) for m in training_mazes]
         training_mazes  = [m["maze"] for m in training_mazes]
         full_training   = {"X": training_mazes, "y": training_labels}

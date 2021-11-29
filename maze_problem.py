@@ -34,6 +34,11 @@ class MazeProblem:
     # Methods
     ##################################################################
     
+    def legal_actions(self, state):
+        s = state
+        possible = [("U", (s[0], s[1]-1)), ("D", (s[0], s[1]+1)), ("L", (s[0]-1, s[1])), ("R", (s[0]+1, s[1]))]
+        return [(m[0], m[1]) for m in possible if self.maze[m[1][1]][m[1][0]] != Constants.WALL_BLOCK]
+    
     def transitions(self, state):
         """
         Given some state s, the transitions will be represented as a list of tuples
@@ -45,8 +50,8 @@ class MazeProblem:
         :state: A maze location tuple
         """
         s = state
-        possible = [("U", (s[0], s[1]-1)), ("D", (s[0], s[1]+1)), ("L", (s[0]-1, s[1])), ("R", (s[0]+1, s[1]))]
-        return [(s[0], self.cost(s[1]), s[1]) for s in possible if self.maze[s[1][1]][s[1][0]] != Constants.WALL_BLOCK]
+        possible = self.legal_actions(s)
+        return [(s[0], self.cost(s[1]), s[1]) for s in possible]
     
     def cost(self, state):
         """

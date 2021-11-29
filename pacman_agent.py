@@ -6,11 +6,13 @@ Maze Pitfall problem
 
 import time
 import random
+import numpy as np
 import torch
 from torch import nn
 from pathfinder import *
 from queue import Queue
 from constants import *
+from pac_trainer import *
 # [!] TODO: import your trained model when ready here!
 
 
@@ -25,6 +27,8 @@ class PacmanAgent:
         # actions that the environment will execute
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.model = PacNet(maze).to(device)
+        self.model.load_state_dict(torch.load(Constants.PARAM_PATH))
+        self.model.eval()
         self.plan = Queue()
 
         # [!] TODO: Initialize any other knowledge-related attributes for
@@ -46,6 +50,10 @@ class PacmanAgent:
         Returns:
             str: direction to move
         """
-
-        random_index = random.randint(0, len(Constants.MOVES)-1)
-        return Constants.MOVES[random_index]
+        maze_vectorized = PacmanMazeDataset.vectorize_maze(perception)
+        print("---------------------------------------------------")
+        move_probs = self.model.forward(maze_vectorized)
+        print(move_probs)
+        move_probs = list(move_probs)
+        print(move_probs)
+        return Constants.MOVES[np.argmax(move_probs)]

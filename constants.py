@@ -54,3 +54,6 @@ class Constants:
     PLR_BLOCK = "@"
     DEATH_BLOCK = "D"
     ENTITIES = [WALL_BLOCK, GHOST_BLOCK, PELLET_BLOCK, SAFE_BLOCK, PLR_BLOCK]
+    
+    # Training constants
+    PARAM_PATH = "params.pth"

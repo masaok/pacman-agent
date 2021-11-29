@@ -358,34 +358,13 @@ if __name__ == "__main__":
     Making a B-line for the goal on these mazes *may* satisfy the threshold listed here,
     but will not in general, more thorough tests.
     """
-    mazes = [
-        # Easy difficulty: Score > -20
-        ["XXXXXX",
-         "X.P..X",
-         "XPGP.X",
-         "X.P..X",
-         "X....X",
-         "X@...X",
-         "XXXXXX"],
-
-        # Medium difficulty: Score > -30
-        ["XXXXXXXXX",
-         "X..P.P..X",
-         "X.......X",
-         "X..P.P..X",
-         "X.......X",
-         "X@......X",
-         "XXXXXXXXX"],
-
-        # Hard difficulty: Score > -35
-        ["XXXXXXXXX",
-         "X..P....X",
-         "X.G..G..X",
-         "X..XXXP.X",
-         "XP.....PX",
-         "X...@...X",
-         "XXXXXXXXX"],
-    ]
+    maze = ["XXXXXXXXX",
+            "X..P...@X",
+            "X.......X",
+            "X..XXXP.X",
+            "XP.....PX",
+            "X.......X",
+            "XXXXXXXXX"]
 
     # Exit the Python app cleanly in terminal
     # Credit: https://stackoverflow.com/q/69917376/10415969
@@ -407,7 +386,7 @@ if __name__ == "__main__":
     # TODO: Add command-line options so debug can be passed as a flag
     step = True
     debug = False
-    env = Environment(mazes[2], window, debug=args.debug, step=args.step)
+    env = Environment(maze, window, debug=args.debug, step=args.step)
 
     # Graphical
     env.move()

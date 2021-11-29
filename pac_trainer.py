@@ -16,30 +16,31 @@ from maze_gen import MazeGen
 
 class PacmanMazeDataset(Dataset):
     
+    maze_entity_indexes = {entity: index for index, entity in enumerate(Constants.ENTITIES)}
+    move_indexes = {move: index for index, move in enumerate(Constants.MOVES)}
+    
     def __init__(self, training_data):
         self.training_data = training_data
-        self.maze_entity_indexes = {entity: index for index, entity in enumerate(Constants.ENTITIES)}
-        self.move_indexes = {move: index for index, move in enumerate(Constants.MOVES)}
         print(self.__getitem__(0))
 
     def __len__(self):
         return len(self.training_data)
     
-    def _vectorize_maze(self, maze):
+    def vectorize_maze(maze):
         result = []
         for row in maze:
             for cell in row:
-                result.append(self.maze_entity_indexes[cell])
+                result.append(PacmanMazeDataset.maze_entity_indexes[cell])
         
-        return torch.flatten(F.one_hot(torch.tensor(result, dtype=torch.long), num_classes=len(self.maze_entity_indexes))).to(torch.float)
+        return torch.flatten(F.one_hot(torch.tensor(result, dtype=torch.long), num_classes=len(PacmanMazeDataset.maze_entity_indexes))).to(torch.float)
     
-    def _vectorize_move(self, move):
-        return F.one_hot(torch.tensor(self.move_indexes[move]), num_classes=len(self.move_indexes)).to(torch.float)
+    def vectorize_move(move):
+        return F.one_hot(torch.tensor(PacmanMazeDataset.move_indexes[move]), num_classes=len(PacmanMazeDataset.move_indexes)).to(torch.float)
 
     def __getitem__(self, idx):
         row = self.training_data.iloc[idx]
         maze, move = row["X"], row["y"]
-        return self._vectorize_maze(maze), self._vectorize_move(move)
+        return PacmanMazeDataset.vectorize_maze(maze), PacmanMazeDataset.vectorize_move(move)
 
 class PacNet(nn.Module):
     
@@ -54,8 +55,8 @@ class PacNet(nn.Module):
             nn.Linear(rows * cols * entities, 20),
             nn.ReLU(),
             nn.Linear(20, moves),
-#             nn.Softmax(),
-#             nn.Linear(moves, moves)
+            nn.ReLU(),
+            nn.Softmax()
         )
 
     def forward(self, x):
@@ -102,7 +103,7 @@ if __name__ == "__main__":
     # Optimization
     learning_rate = 1e-3
     batch_size = 64
-    epochs = 10
+    epochs = 500
     loss_fn = nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
     for t in range(epochs):
@@ -110,5 +111,5 @@ if __name__ == "__main__":
         train_loop(train_dataloader, model, loss_fn, optimizer)
     print("Done!")
     
-#     torch.save(model.state_dict(), "./")
+    torch.save(model.state_dict(), Constants.PARAM_PATH)
     

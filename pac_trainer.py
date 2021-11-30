@@ -52,11 +52,11 @@ class PacNet(nn.Module):
         entities = len(Constants.ENTITIES)
         moves = len(Constants.MOVES)
         self.linear_relu_stack = nn.Sequential(
-            nn.Linear(rows * cols * entities, 128),
+            nn.Linear(rows * cols * entities, 256),
             nn.ReLU(),
-            nn.Linear(128, 56),
+            nn.Linear(256, 128),
             nn.ReLU(),
-            nn.Linear(56, moves),
+            nn.Linear(128, moves),
         )
 
     def forward(self, x):
@@ -82,14 +82,14 @@ def train_loop(dataloader, model, loss_fn, optimizer):
 
 if __name__ == "__main__":
     maze = ["XXXXXXXXX",
-            "X..P....X",
+            "X..O....X",
             "X.......X",
-            "X..XXXP.X",
-            "XP.....PX",
-            "X...@...X",
+            "X..XXXO.X",
+            "XO.....OX",
+            "X...P...X",
             "XXXXXXXXX"]
     
-    result = MazeGen.get_labeled_data(maze, 10000)
+    result = MazeGen.get_labeled_data(maze, 9000)
     data = PacmanMazeDataset(result)
     train_dataloader = DataLoader(data, batch_size=4, shuffle=True)
     train_features, train_labels = next(iter(train_dataloader))
@@ -101,7 +101,7 @@ if __name__ == "__main__":
     # Optimization
     learning_rate = 1e-3
     batch_size = 64
-    epochs = 100
+    epochs = 200
     loss_fn = nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
     for t in range(epochs):

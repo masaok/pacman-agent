@@ -12,6 +12,7 @@ from constants import Constants
 
 # Whether or not pellets are in new, different positions for each generated maze
 RAND_PELLETS = False
+N_SAMPLES = 10000
 
 class MazeGen:
     
@@ -51,7 +52,7 @@ class MazeGen:
     @staticmethod
     def get_labeled_data (maze, n_samples):
         # Create base maze with only the walls remaining
-        base_maze = [re.sub(r"[PG@]+", ".", row) for row in maze]
+        base_maze = [re.sub(r"[" + Constants.PELLET_BLOCK + Constants.PLR_BLOCK + Constants.GHOST_BLOCK + "]", ".", row) for row in maze]
         rows, cols = len(base_maze), len(base_maze[0])
         n_ghosts = n_pellets = 0
         legal_positions = []
@@ -61,12 +62,12 @@ class MazeGen:
         for r in range(rows):
             for c in range(cols):
                 curr_cell = maze[r][c]
-                if (curr_cell == "P"):
+                if (curr_cell == Constants.PELLET_BLOCK):
                     n_pellets += 1
                     pellet_positions.append((c, r))
-                if (curr_cell == "G"):
+                if (curr_cell == Constants.GHOST_BLOCK):
                     n_ghosts += 1
-                if (curr_cell != "X" and curr_cell != "P"):
+                if (curr_cell != Constants.WALL_BLOCK and curr_cell != Constants.PELLET_BLOCK):
                     legal_positions.append((c, r))
         
         training_mazes  = [MazeGen._get_new_maze(base_maze, n_ghosts, n_pellets, legal_positions, pellet_positions, RAND_PELLETS) for _ in range(n_samples)]
@@ -77,14 +78,16 @@ class MazeGen:
 
 if __name__ == "__main__":
     maze = ["XXXXXXXXX",
-            "X..P....X",
+            "X..O....X",
             "X.......X",
-            "X..XXXP.X",
-            "XP.....PX",
-            "X...@...X",
+            "X..XXXO.X",
+            "XO.....OX",
+            "X...P...X",
             "XXXXXXXXX"]
     
     pd.set_option('display.max_rows', None)
-    result = MazeGen.get_labeled_data(maze, 100)
-    print(result.explode("X"))
+    result = MazeGen.get_labeled_data(maze, N_SAMPLES)
+    result["X"] = result["X"].transform(lambda x: "\n".join(x))
+    result.to_csv("./dat/generated_data.csv", index=False)
+    
     

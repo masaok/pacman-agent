@@ -1,10 +1,7 @@
 import tkinter as tk
 from tkinter import *
 from PIL import Image, ImageTk
-
-
 from pprint import pprint
-
 from constants import Constants
 from ui.pacman_ui import PacmanUI
 from ui.ghost_ui import GhostUI
@@ -124,7 +121,7 @@ class MazeUI:
                 x2 = x1 + self._block_size
                 y2 = y1 + self._block_size
 
-                if token == 'P':
+                if token == Constants.PELLET_BLOCK:
                     margin = 25
                     self._canvas.create_rectangle(x1, y1, x2, y2, fill="black")
                     self._canvas.create_oval(
@@ -135,7 +132,7 @@ class MazeUI:
                     #                               tags="area")
                     self._canvas.create_rectangle(x1, y1, x2, y2, fill="black")
                     self.pacman.draw(token, (x2 - x1) / 2 + x1, (y2 - y1) / 2 + y1)
-                elif token == 'G':
+                elif token == Constants.GHOST_BLOCK:
                     self._canvas.create_rectangle(x1, y1, x2, y2, fill="black")
                     # self._canvas.create_rectangle(x1, y1, x2, y2, fill=color)
                     self.ghost.draw(x1, y1, self._block_size, self._block_size)

@@ -361,11 +361,11 @@ if __name__ == "__main__":
     but will not in general, more thorough tests.
     """
     maze = ["XXXXXXXXX",
-            "X..P...@X",
+            "X..O....X",
             "X.......X",
-            "X..XXXP.X",
-            "XP.....PX",
-            "X.......X",
+            "X..XXXO.X",
+            "XO.....OX",
+            "X...P...X",
             "XXXXXXXXX"]
 
     # Exit the Python app cleanly in terminal

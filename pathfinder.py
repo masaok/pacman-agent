@@ -11,7 +11,6 @@ import queue
 import unittest
 import itertools
 import math
-# from maze_problem import *
 from search_tree_node import *
 
 

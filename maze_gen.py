@@ -10,19 +10,23 @@ from maze_problem import MazeProblem
 from pathfinder import *
 from constants import Constants
 
-# Whether or not pellets are in new, different positions for each generated maze
-RAND_PELLETS = False
-N_SAMPLES = 10000
-
 class MazeGen:
+    """
+    Maze Generation class used to create faux-samples for the Pacman Trainer
+    """
     
-    # TODO: If not behaving well, issue might be how the label is being selected
     @staticmethod
     def _generate_label (maze, positions):
+        """
+        Assigns a faux-label to the given maze that is the action which brings
+        Pacman closest to the nearest pellet
+        """
         mp = MazeProblem(maze)
         pac_pos = positions["pacman"][0]
         best_cost, best_act = float('inf'), None
         
+        # TODO: Can be improved to account for ghosts, this is just for illustrative
+        # purposes!
         for pellet_pos in positions["pellets"]:
             cost, path = pathfind(mp, pac_pos, pellet_pos)
             if cost < best_cost:
@@ -32,6 +36,11 @@ class MazeGen:
 
     @staticmethod
     def _get_new_maze (maze, n_ghosts, n_pellets, legal_positions, pellet_positions, rand_pellets):
+        """
+        Generates a new maze with the walls in fixed positions, and the number of pellets / ghosts fixed,
+        but in random* positions.
+        * If rand_pellets is True, fixes the positions of the pellets to the given pellet_positions
+        """
         result = dict()
         positions = random.sample(legal_positions, n_ghosts + 1 if not rand_pellets else n_ghosts + n_pellets + 1)
         result["positions"] = {
@@ -51,6 +60,11 @@ class MazeGen:
 
     @staticmethod
     def get_labeled_data (maze, n_samples):
+        """
+        Generates n_samples number of maze combinations from the given base-maze in which
+        the walls are in fixed position, but the other maze contents are randomized (except
+        when some generation parameters are set, like Constants.RAND_PELLETS).
+        """
         # Create base maze with only the walls remaining
         base_maze = [re.sub(r"[" + Constants.PELLET_BLOCK + Constants.PLR_BLOCK + Constants.GHOST_BLOCK + "]", ".", row) for row in maze]
         rows, cols = len(base_maze), len(base_maze[0])
@@ -70,13 +84,17 @@ class MazeGen:
                 if (curr_cell != Constants.WALL_BLOCK and curr_cell != Constants.PELLET_BLOCK):
                     legal_positions.append((c, r))
         
-        training_mazes  = [MazeGen._get_new_maze(base_maze, n_ghosts, n_pellets, legal_positions, pellet_positions, RAND_PELLETS) for _ in range(n_samples)]
+        training_mazes  = [MazeGen._get_new_maze(base_maze, n_ghosts, n_pellets, legal_positions, pellet_positions, Constants.RAND_PELLETS) for _ in range(n_samples)]
         training_labels = [MazeGen._generate_label(m["maze"], m["positions"]) for m in training_mazes]
         training_mazes  = [m["maze"] for m in training_mazes]
         full_training   = {"X": training_mazes, "y": training_labels}
         return pd.DataFrame(data=full_training)
 
 if __name__ == "__main__":
+    """
+    Used to generate csv output for mazes
+    """
+    print("[!] Beginning Maze Generation")
     maze = ["XXXXXXXXX",
             "X..O....X",
             "X.......X",
@@ -85,9 +103,8 @@ if __name__ == "__main__":
             "X...P...X",
             "XXXXXXXXX"]
     
-    pd.set_option('display.max_rows', None)
-    result = MazeGen.get_labeled_data(maze, N_SAMPLES)
+    result = MazeGen.get_labeled_data(maze, Constants.N_SAMPLES)
     result["X"] = result["X"].transform(lambda x: "\n".join(x))
-    result.to_csv("./dat/generated_data.csv", index=False)
-    
+    result.to_csv(Constants.MAZE_GEN_PATH, index=False)
+    print("[!] Maze Generation Completed!")
     

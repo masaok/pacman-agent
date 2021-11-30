@@ -1,7 +1,6 @@
 '''
-BlindBot MazeAgent meant to employ Propositional Logic,
-Search, Planning, and Active Learning to navigate the
-Maze Pitfall problem
+Pacman Agent employing a PacNet trained in another module to
+navigate perilous ghostly pellet mazes.
 '''
 
 import time
@@ -13,42 +12,34 @@ from pathfinder import *
 from queue import Queue
 from constants import *
 from pac_trainer import *
-# [!] TODO: import your trained model when ready here!
-
 
 class PacmanAgent:
-
-    ##################################################################
-    # Constructor
-    ##################################################################
+    '''
+    Deep learning Pacman agent that employs PacNets trained in the pac_trainer.py
+    module.
+    '''
 
     def __init__(self, maze):
-        # The agent's plan will be a queue storing the sequence of
-        # actions that the environment will execute
+        """
+        Initializes the PacmanAgent with any attributes needed to make decisions;
+        for the deep-learning implementation, really just needs the model and
+        its plan Queue.
+        :maze: The maze on which this agent is to operate. Must be the same maze
+        structure as the one on which this agent's model was trained.
+        """
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.model = PacNet(maze).to(device)
         self.model.load_state_dict(torch.load(Constants.PARAM_PATH))
         self.model.eval()
         self.plan = Queue()
 
-        # [!] TODO: Initialize any other knowledge-related attributes for
-        # agent here, or any other record-keeping attributes you'd like
-
-    ##################################################################
-    # Methods
-    ##################################################################
-
     def choose_action(self, perception, legal_actions):
         """
-        Returns an action from a set {U, D, L, R} given perception (maze)
-        Currently returns a random choice
-        TODO: give a choice of moving toward the goal or away from the goal
-
-        Parameters:
-            perception (array): array of strings representation of the maze
-
-        Returns:
-            str: direction to move
+        Returns an action from the options in Constants.MOVES based on the agent's
+        perception (the current maze) and legal actions available
+        :perception: The current maze state in which to act
+        :legal_actions: Map of legal actions to their next agent states
+        :return: Action choice from the set of legal_actions
         """
         maze_vectorized = PacmanMazeDataset.vectorize_maze(perception)
         move_probs = list(self.model.forward(maze_vectorized))

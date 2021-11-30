@@ -1,3 +1,7 @@
+'''
+Graphical component for rendering the Pacman mazes.
+'''
+
 import tkinter as tk
 from tkinter import *
 from PIL import Image, ImageTk
@@ -8,10 +12,6 @@ from ui.ghost_ui import GhostUI
 
 
 class MazeUI:
-
-    ##################################################################
-    # Constructor
-    ##################################################################
 
     def __init__(self, window, maze):
 
@@ -81,10 +81,6 @@ class MazeUI:
         self.ghost = GhostUI(self._canvas)
 
         self._window.update()
-
-    ##################################################################
-    # Methods
-    ##################################################################
 
     def destroy(self):
         self.window.destroy()

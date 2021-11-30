@@ -207,7 +207,6 @@ class Environment:
     # Print the maze and agent's maze to the screen
     def _display(self):
         for (rowIndex, row) in enumerate(self._maze):
-            # print(''.join(row) + "\t" + ''.join(self._maze[rowIndex]))
             print(''.join(self._maze[rowIndex]))
 
     def _wall_test(self, loc):
@@ -262,9 +261,6 @@ class Environment:
         self._maze[old_loc[1]][old_loc[0]
                                ] = self._og_maze[old_loc[1]][old_loc[0]]
         self._maze[new_loc[1]][new_loc[0]] = Constants.PLR_BLOCK
-
-        # Agent "tile" -- what is an agent tile?
-        # self._ag_tile = self._og_maze[new_loc[1]][new_loc[0]]
 
     def _insert_block(self, location, block):
         self._maze[location[1]][location[0]] = block
@@ -329,6 +325,13 @@ class Environment:
             index += 1
 
 
+# Exit the Python app cleanly in terminal
+# Credit: https://stackoverflow.com/q/69917376/10415969
+def on_exit():
+    env._maze_ui.window.destroy()  # env window
+    env._maze_ui.btn_var.set("")
+    exit(0)
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Pacman Trainer Deep Learning GUI')
@@ -367,13 +370,6 @@ if __name__ == "__main__":
             "XO.....OX",
             "X...P...X",
             "XXXXXXXXX"]
-
-    # Exit the Python app cleanly in terminal
-    # Credit: https://stackoverflow.com/q/69917376/10415969
-    def on_exit():
-        env._maze_ui.window.destroy()  # env window
-        env._maze_ui.btn_var.set("")
-        exit(0)
 
     window = tk.Tk()
     window.protocol('WM_DELETE_WINDOW', on_exit)

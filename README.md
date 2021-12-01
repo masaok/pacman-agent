@@ -21,7 +21,7 @@ First, check out this repo and `cd` into the repo directory, then follow these s
 
 ```
 $ python3 -m venv env
-$ source env/Script/activate  # Windows Git Bash only
+$ source env/Scripts/activate  # Windows Git Bash only
 $ source env/bin/activate     # Mac / Linux only
 $ pip install -r requirements.txt
 $ python3 -u environment.py -h  # Show command-line help

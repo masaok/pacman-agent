@@ -62,6 +62,7 @@ class Environment:
                 if cell == Constants.PLR_BLOCK:
                     self._player_loc = self._initial_loc = (col_num, row_num)
 
+        self._n_pellets = len(self._pellets)
         self._spcl = self._pellets | self._walls
         self._wrn1_tiles = self._get_wrn_set(
             [self._get_adjacent(loc, 1) for loc in self._pellets])
@@ -155,6 +156,11 @@ class Environment:
             self._insert_block(self._player_loc, Constants.DEATH_BLOCK)
             self._cleanup()
             return
+        
+        if self._pellets_eaten == self._n_pellets:
+            print("ALL PELLETS EATEN! HUZZAH YOU GLUTTON!  DONE!")
+            self._cleanup()
+            return
 
         print("GHOSTS MOVING ...")
         print(self._ghosts)
@@ -243,7 +249,8 @@ class Environment:
             new_loc = old_loc
         else:  # otherwise, process the new location
             if self._pellet_test(new_loc):
-                self._pellets_eaten += Constants.get_pellet_reward()
+                self._pellets_eaten += 1
+                self._score += Constants.get_pellet_reward()
                 if self._debug:
                     print("PELLET EATEN!!!")
                     print("PELLET SCORE:", self._pellets_eaten)
@@ -357,20 +364,6 @@ if __name__ == "__main__":
     if args.animate:
         args.step = False
 
-    """
-    Some example mazes with associated difficulties are
-    listed below. The score thresholds given are for agents that actually use logic.
-    Making a B-line for the goal on these mazes *may* satisfy the threshold listed here,
-    but will not in general, more thorough tests.
-    """
-    maze = ["XXXXXXXXX",
-            "X..O...PX",
-            "X.......X",
-            "X..XXXO.X",
-            "XO.....OX",
-            "X.......X",
-            "XXXXXXXXX"]
-
     window = tk.Tk()
     window.protocol('WM_DELETE_WINDOW', on_exit)
 
@@ -384,7 +377,7 @@ if __name__ == "__main__":
     # TODO: Add command-line options so debug can be passed as a flag
     step = True
     debug = False
-    env = Environment(maze, window, debug=args.debug, step=args.step)
+    env = Environment(Constants.MAZE, window, debug=args.debug, step=args.step)
 
     # Graphical
     env.move()

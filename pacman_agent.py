@@ -27,11 +27,9 @@ class PacmanAgent:
         :maze: The maze on which this agent is to operate. Must be the same maze
         structure as the one on which this agent's model was trained.
         """
-        device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        self.model = PacNet(maze).to(device)
+        self.model = PacNet(maze).to(Constants.DEVICE)
         self.model.load_state_dict(torch.load(Constants.PARAM_PATH))
         self.model.eval()
-        self.plan = Queue()
 
     def choose_action(self, perception, legal_actions):
         """

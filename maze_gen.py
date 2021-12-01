@@ -95,15 +95,7 @@ if __name__ == "__main__":
     Used to generate csv output for mazes
     """
     print("[!] Beginning Maze Generation")
-    maze = ["XXXXXXXXX",
-            "X..O....X",
-            "X.......X",
-            "X..XXXO.X",
-            "XO.....OX",
-            "X...P...X",
-            "XXXXXXXXX"]
-    
-    result = MazeGen.get_labeled_data(maze, Constants.N_SAMPLES)
+    result = MazeGen.get_labeled_data(Constants.MAZE, Constants.N_SAMPLES)
     result["X"] = result["X"].transform(lambda x: "\n".join(x))
     result.to_csv(Constants.MAZE_GEN_PATH, index=False)
     print("[!] Maze Generation Completed!")

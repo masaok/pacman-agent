@@ -15,9 +15,6 @@ from torch.utils.data import Dataset
 from constants import *
 from maze_gen import MazeGen
 
-# Used to determine whether GPU acceleration is available or not
-DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
-
 class PacmanMazeDataset(Dataset):
     """
     PyTorch Dataset extension used to vectorize Pacman mazes consisting of the
@@ -58,7 +55,7 @@ class PacmanMazeDataset(Dataset):
             for cell in row:
                 result.append(PacmanMazeDataset.maze_entity_indexes[cell])
         
-        return torch.flatten(F.one_hot(torch.tensor(result, dtype=torch.long), num_classes=len(PacmanMazeDataset.maze_entity_indexes))).to(torch.float).to(DEVICE)
+        return torch.flatten(F.one_hot(torch.tensor(result, dtype=torch.long), num_classes=len(PacmanMazeDataset.maze_entity_indexes))).to(torch.float).to(Constants.DEVICE)
     
     def vectorize_move(move):
         '''
@@ -71,7 +68,7 @@ class PacmanMazeDataset(Dataset):
         :move: String representing an action to be taken
         :returns: One-hot vector representation of that action.
         '''
-        return F.one_hot(torch.tensor(PacmanMazeDataset.move_indexes[move]), num_classes=len(PacmanMazeDataset.move_indexes)).to(torch.float).to(DEVICE)
+        return F.one_hot(torch.tensor(PacmanMazeDataset.move_indexes[move]), num_classes=len(PacmanMazeDataset.move_indexes)).to(torch.float).to(Constants.DEVICE)
 
 
 class PacNet(nn.Module):
@@ -142,21 +139,13 @@ if __name__ == "__main__":
     pacman agent.
     See: https://pytorch.org/tutorials/beginner/basics/optimization_tutorial.html
     """
-    maze = ["XXXXXXXXX",
-            "X..O....X",
-            "X.......X",
-            "X..XXXO.X",
-            "XO.....OX",
-            "X...P...X",
-            "XXXXXXXXX"]
-    
-    result = MazeGen.get_labeled_data(maze, Constants.N_SAMPLES)
+    result = MazeGen.get_labeled_data(Constants.MAZE, Constants.N_SAMPLES)
     data = PacmanMazeDataset(result)
     train_dataloader = DataLoader(data, batch_size=4, shuffle=True)
     train_features, train_labels = next(iter(train_dataloader))
     
     # NN Construction
-    model = PacNet(maze).to(DEVICE)
+    model = PacNet(Constants.MAZE).to(Constants.DEVICE)
     
     # Optimization
     learning_rate = 1e-3

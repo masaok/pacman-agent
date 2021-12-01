@@ -34,6 +34,7 @@ $ deactivate  # exit virtual environment
 ### Windows WSL2 Ubuntu Extras
 
 ```
+sudo apt update
 sudo apt-get install python3-tk
 ```
 

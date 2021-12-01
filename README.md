@@ -31,6 +31,11 @@ $ python3 -u environment.py     # Run the app and show the GUI
 ```
 $ deactivate  # exit virtual environment
 ```
+### Windows WSL2 Ubuntu Extras
+
+```
+sudo apt-get install python3-tk
+```
 
 ## Components
 

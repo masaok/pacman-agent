@@ -55,7 +55,7 @@ class PacmanMazeDataset(Dataset):
             for cell in row:
                 result.append(PacmanMazeDataset.maze_entity_indexes[cell])
         
-        return torch.flatten(F.one_hot(torch.tensor(result, dtype=torch.long), num_classes=len(PacmanMazeDataset.maze_entity_indexes))).to(torch.float)
+        return torch.flatten(F.one_hot(torch.tensor(result, dtype=torch.long), num_classes=len(PacmanMazeDataset.maze_entity_indexes))).to(torch.float).to("cuda")
     
     def vectorize_move(move):
         '''
@@ -68,7 +68,7 @@ class PacmanMazeDataset(Dataset):
         :move: String representing an action to be taken
         :returns: One-hot vector representation of that action.
         '''
-        return F.one_hot(torch.tensor(PacmanMazeDataset.move_indexes[move]), num_classes=len(PacmanMazeDataset.move_indexes)).to(torch.float)
+        return F.one_hot(torch.tensor(PacmanMazeDataset.move_indexes[move]), num_classes=len(PacmanMazeDataset.move_indexes)).to(torch.float).to("cuda")
 
 
 class PacNet(nn.Module):
@@ -137,6 +137,7 @@ if __name__ == "__main__":
     Main method used to load training data, construct PacNet, and then
     train it, finally saving the network's parameters for use by the
     pacman agent.
+    See: https://pytorch.org/tutorials/beginner/basics/optimization_tutorial.html
     """
     maze = ["XXXXXXXXX",
             "X..O....X",
@@ -146,7 +147,7 @@ if __name__ == "__main__":
             "X...P...X",
             "XXXXXXXXX"]
     
-    result = MazeGen.get_labeled_data(maze, 9000)
+    result = MazeGen.get_labeled_data(maze, Constants.N_SAMPLES)
     data = PacmanMazeDataset(result)
     train_dataloader = DataLoader(data, batch_size=4, shuffle=True)
     train_features, train_labels = next(iter(train_dataloader))
@@ -158,9 +159,9 @@ if __name__ == "__main__":
     # Optimization
     learning_rate = 1e-3
     batch_size = 64
-    epochs = 200
+    epochs = 100
     loss_fn = nn.CrossEntropyLoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     for t in range(epochs):
         print(f"Epoch {t+1}\n-------------------------------")
         train_loop(train_dataloader, model, loss_fn, optimizer)

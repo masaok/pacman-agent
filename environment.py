@@ -364,11 +364,11 @@ if __name__ == "__main__":
     but will not in general, more thorough tests.
     """
     maze = ["XXXXXXXXX",
-            "X..O....X",
+            "X..O...PX",
             "X.......X",
             "X..XXXO.X",
             "XO.....OX",
-            "X...P...X",
+            "X.......X",
             "XXXXXXXXX"]
 
     window = tk.Tk()

@@ -42,7 +42,7 @@ class PacmanAgent:
         :return: Action choice from the set of legal_actions
         """
         maze_vectorized = PacmanMazeDataset.vectorize_maze(perception)
-        move_probs = list(self.model.forward(maze_vectorized))
+        move_probs = list(self.model(maze_vectorized))
         move_probs = {move: move_probs[moveIdx] for moveIdx, move in enumerate(Constants.MOVES)}
         move_probs = {move: prob for (move, prob) in move_probs.items() if move in {s[0] for s in legal_actions}}
         return max(move_probs, key=move_probs.get) if len(move_probs) > 0 else random.choice(legal_actions.keys())

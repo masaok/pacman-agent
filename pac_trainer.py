@@ -15,6 +15,9 @@ from torch.utils.data import Dataset
 from constants import *
 from maze_gen import MazeGen
 
+# Used to determine whether GPU acceleration is available or not
+DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+
 class PacmanMazeDataset(Dataset):
     """
     PyTorch Dataset extension used to vectorize Pacman mazes consisting of the
@@ -55,7 +58,7 @@ class PacmanMazeDataset(Dataset):
             for cell in row:
                 result.append(PacmanMazeDataset.maze_entity_indexes[cell])
         
-        return torch.flatten(F.one_hot(torch.tensor(result, dtype=torch.long), num_classes=len(PacmanMazeDataset.maze_entity_indexes))).to(torch.float).to("cuda")
+        return torch.flatten(F.one_hot(torch.tensor(result, dtype=torch.long), num_classes=len(PacmanMazeDataset.maze_entity_indexes))).to(torch.float).to(DEVICE)
     
     def vectorize_move(move):
         '''
@@ -68,7 +71,7 @@ class PacmanMazeDataset(Dataset):
         :move: String representing an action to be taken
         :returns: One-hot vector representation of that action.
         '''
-        return F.one_hot(torch.tensor(PacmanMazeDataset.move_indexes[move]), num_classes=len(PacmanMazeDataset.move_indexes)).to(torch.float).to("cuda")
+        return F.one_hot(torch.tensor(PacmanMazeDataset.move_indexes[move]), num_classes=len(PacmanMazeDataset.move_indexes)).to(torch.float).to(DEVICE)
 
 
 class PacNet(nn.Module):
@@ -153,8 +156,7 @@ if __name__ == "__main__":
     train_features, train_labels = next(iter(train_dataloader))
     
     # NN Construction
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    model = PacNet(maze).to(device)
+    model = PacNet(maze).to(DEVICE)
     
     # Optimization
     learning_rate = 1e-3
@@ -167,5 +169,6 @@ if __name__ == "__main__":
         train_loop(train_dataloader, model, loss_fn, optimizer)
     print("Done!")
     
+    # Save weights
     torch.save(model.state_dict(), Constants.PARAM_PATH)
     

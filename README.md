@@ -55,8 +55,8 @@ export LIBGL_ALWAYS_INDIRECT=1
 
 Source: https://stackoverflow.com/questions/61110603/how-to-set-up-working-x11-forwarding-on-wsl2
 
-**Verify that VcXsrv is running correctly by testing Xcalc:
-**
+**Verify that VcXsrv is running correctly by testing Xcalc:**
+
 <img src="https://user-images.githubusercontent.com/1320083/144791512-15fa20b7-8dff-4e3f-ba2f-55ade96f3276.png" width="40%" height="40%">
 
 Also, make this change in the code whereever `torch.load` is called:

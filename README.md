@@ -44,7 +44,7 @@ Download and install VcXsrv from here: https://sourceforge.net/projects/vcxsrv/
 
 When running it (it's called XLaunch in Windows), make sure to check this box:
 
-<img src="https://user-images.githubusercontent.com/1320083/144791402-763bdb42-94a4-490b-8d90-4cd898f55984.png" width="40%" height="40%">
+<img src="https://user-images.githubusercontent.com/1320083/144793105-700cf916-2702-4510-9e22-72e578c21e36.png" width="40%" height="40%">
 
 Also, add this to your `.bash_profile` and `source` it:
 

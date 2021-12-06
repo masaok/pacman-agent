@@ -44,7 +44,7 @@ Download and install VcXsrv from here: https://sourceforge.net/projects/vcxsrv/
 
 When running it (it's called XLaunch in Windows), make sure to check this box:
 
-![image](https://user-images.githubusercontent.com/1320083/144791402-763bdb42-94a4-490b-8d90-4cd898f55984.png)
+<img src="https://user-images.githubusercontent.com/1320083/144791402-763bdb42-94a4-490b-8d90-4cd898f55984.png" width="40%" height="40%">
 
 Also, add this to your `.bash_profile` and `source` it:
 
@@ -57,12 +57,11 @@ Source: https://stackoverflow.com/questions/61110603/how-to-set-up-working-x11-f
 
 Verify that VcXsrv is running correctly by testing Xcalc:
 
-![image](https://user-images.githubusercontent.com/1320083/144791512-15fa20b7-8dff-4e3f-ba2f-55ade96f3276.png)
+<img src="https://user-images.githubusercontent.com/1320083/144791512-15fa20b7-8dff-4e3f-ba2f-55ade96f3276.png" width="40%" height="40%">
 
 Also, make this change in the code whereever `torch.load` is called: https://stackoverflow.com/questions/56369030/runtimeerror-attempting-to-deserialize-object-on-a-cuda-device/62327502#62327502
 
-![image](https://user-images.githubusercontent.com/1320083/144791554-3731ce3c-99e2-4877-a766-cbf4664984db.png)
-
+<img src="https://user-images.githubusercontent.com/1320083/144791554-3731ce3c-99e2-4877-a766-cbf4664984db.png" width="40%" height="40%">
 
 ## Components
 

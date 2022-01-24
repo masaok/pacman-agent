@@ -5,6 +5,7 @@ any cardinal direction
 '''
 
 from constants import Constants
+import copy
 
 class MazeProblem:
     
@@ -23,6 +24,46 @@ class MazeProblem:
         :maze: a list of list of strings containing maze elements
         """
         self.maze = maze
+         # Maze block sets
+        self._ghosts = set()
+        self._pellets = set()
+        self._walls = set()
+
+        # Scan for blocks in the input maze
+        for (row_num, row) in enumerate(maze):
+            for (col_num, cell) in enumerate(row):
+                if cell == Constants.WALL_BLOCK:
+                    self._walls.add((col_num, row_num))
+                if cell == Constants.GHOST_BLOCK:
+                    self._ghosts.add((col_num, row_num))
+                if cell == Constants.PELLET_BLOCK:
+                    self._pellets.add((col_num, row_num))
+                if cell == Constants.PLR_BLOCK:
+                    self._player_loc = self._initial_loc = (col_num, row_num)
+
+    def get_player_loc(self):
+        """
+        Returns the current location of Pacman
+        """
+        return copy.deepcopy(self._player_loc)
+    
+    def get_ghosts(self):
+        """
+        Returns a set containing the locations of all ghosts in the maze
+        """
+        return copy.deepcopy(self._ghosts)
+    
+    def get_pellets(self):
+        """
+        Returns a set containing the locations of all remaining pellets in the maze
+        """
+        return copy.deepcopy(self._pellets)
+    
+    def get_walls(self):
+        """
+        Returns a set containing the locations of all walls in the maze
+        """
+        return copy.deepcopy(self._walls)
         
     def legal_actions(self, state):
         """

@@ -13,20 +13,21 @@ from ui.ghost_ui import GhostUI
 
 class MazeUI:
 
-    def __init__(self, window, maze):
+    def __init__(self, window, maze, debug=False):
 
         # Save the window to add buttons later
         self.window = window
+        self._debug = debug
 
-        print("MAZE UI INIT")
+        if self._debug:
+            print("MAZE UI INIT")
         self._maze = maze
-        # self._window = tk.Tk()
-        # self._window.geometry("500x500")
 
         self._rows = len(maze)
         self._cols = len(maze[0])
-        print("ROWS: ", self._rows)
-        print("COLS: ", self._cols)
+        if self._debug:
+            print("ROWS: ", self._rows)
+            print("COLS: ", self._cols)
 
         self._block_size = 80
 
@@ -48,28 +49,23 @@ class MazeUI:
         # Calculate x and y coordinates for the *centered* Tk root window
         x = (ws/2) - (w/2)
         y = (hs/2) - (h/2)
-        print("MAZE UI x: ", x)
-        print("MAZE UI y: ", y)
+        
+        if self._debug:
+            print("MAZE UI x: ", x)
+            print("MAZE UI y: ", y)
 
         # set the dimensions of the screen
         # and where it is placed
-        # window.geometry('%dx%d+%d+%d' % (w, h, x, y))
         window.geometry('+%d+%d' % (x, y))
-        self._window = window
+        self.window = window
 
         self._canvas = tk.Canvas(
-            self._window, height=self.canvas_height, width=self.canvas_width)
+            self.window, height=self.canvas_height, width=self.canvas_width)
         # self._canvas.grid(row=0, column=0, sticky='w')
         self._canvas.pack()
 
-        # # Test show image here
-        # self.filename = "ui/images/red_ghost_trans.png"
-        # self.image = Image.open(self.filename)
-        # new_image = ImageTk.PhotoImage(self.image)
-        # self._canvas.create_image(0, 0, anchor=NW, image=new_image)
 
         # Draw controls
-        # TODO: Don't draw the controls every render
         self.btn_var = tk.IntVar()
         self.btn = Button(self.window, text='Step forward', width=40,
                           height=5, bd='10', command=lambda: self.btn_var.set(1))
@@ -80,13 +76,14 @@ class MazeUI:
         self.pacman = PacmanUI(self._canvas)
         self.ghost = GhostUI(self._canvas)
 
-        self._window.update()
+        self.window.update()
 
     def destroy(self):
         self.window.destroy()
 
     def draw_maze(self):
-        pprint(self._maze)
+        if self._debug:
+            pprint(self._maze)
 
         self._canvas.delete('all')
 
@@ -95,8 +92,6 @@ class MazeUI:
 
                 # Get the symbol
                 token = self._maze[row][col]
-                # print("ROW: ", row, " COL: ", col, " TOKEN: ", token)
-
                 color = "black"
                 if token == Constants.PLR_BLOCK:
                     color = "yellow"
@@ -112,7 +107,6 @@ class MazeUI:
                     color = "blue"
 
                 x1 = (col * self._block_size)
-                # y1 = ((7 - row) * self.dim_square)
                 y1 = row * self._block_size
                 x2 = x1 + self._block_size
                 y2 = y1 + self._block_size
@@ -124,28 +118,22 @@ class MazeUI:
                         [x1 + margin, y1 + margin, x2 - margin, y2 - margin],
                         fill=color)
                 elif token == Constants.PLR_BLOCK or token == Constants.DEATH_BLOCK:
-                    # self._canvas.create_rectangle(x1, y1, x2, y2, fill=color,
-                    #                               tags="area")
                     self._canvas.create_rectangle(x1, y1, x2, y2, fill="black")
                     self.pacman.draw(token, (x2 - x1) / 2 + x1, (y2 - y1) / 2 + y1)
                 elif token == Constants.GHOST_BLOCK:
                     self._canvas.create_rectangle(x1, y1, x2, y2, fill="black")
-                    # self._canvas.create_rectangle(x1, y1, x2, y2, fill=color)
                     self.ghost.draw(x1, y1, self._block_size, self._block_size)
                 else:
                     self._canvas.create_rectangle(
                         x1, y1, x2, y2, fill=color, outline="black", width=3, tags="area")
 
         # Draw controls
-        # TODO: Don't draw the controls every render
         self._canvas.create_rectangle(
             0, self.canvas_height - self.controls_height, self.canvas_width, self.canvas_height,
             fill="black")
 
         self.btn.place(x=100, y=(self.canvas_height - self.controls_height))
-        # self.exit_button.place(
-        #     x=300, y=(self.canvas_height - self.controls_height))
 
         # Force the update so the window shows immediately
         # https://python-forum.io/thread-34564.html
-        self._window.update()
+        self.window.update()

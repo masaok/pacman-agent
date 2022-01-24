@@ -40,6 +40,14 @@ class Constants:
         Returns the cost of a movement onto a ghost
         """
         return 20
+    
+    @staticmethod
+    def get_ghost_epsilon():
+        """
+        Returns the likelihood that a Ghost makes a random choice, rather
+        than chasing Pacman
+        """
+        return 0.1
 
     # Movement constants + location modifiers
     MOVES = ["U", "D", "L", "R"]

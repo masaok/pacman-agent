@@ -34,6 +34,7 @@ class Environment:
         :verbose: Whether or not the maze updates will be printed
         """
         self._maze = maze
+        self._mp = MazeProblem(maze)
         self._rows = len(maze)
         self._cols = len(maze[0])
         self._tick_length = tick_length
@@ -42,32 +43,16 @@ class Environment:
         self._step = step
 
         # Maze block sets
-        self._ghosts = set()
-        self._pellets = set()
-        self._walls = set()
+        self._ghosts = self._mp.get_ghosts()
+        self._pellets = self._mp.get_pellets()
+        self._walls = self._mp.get_walls()
+        self._player_loc = self._initial_loc = self._mp.get_player_loc()
 
         # Score keeping
         self._score = 0
         self._pellets_eaten = 0
-
-        # Scan for blocks in the input maze
-        for (row_num, row) in enumerate(maze):
-            for (col_num, cell) in enumerate(row):
-                if cell == Constants.WALL_BLOCK:
-                    self._walls.add((col_num, row_num))
-                if cell == Constants.GHOST_BLOCK:
-                    self._ghosts.add((col_num, row_num))
-                if cell == Constants.PELLET_BLOCK:
-                    self._pellets.add((col_num, row_num))
-                if cell == Constants.PLR_BLOCK:
-                    self._player_loc = self._initial_loc = (col_num, row_num)
-
         self._n_pellets = len(self._pellets)
         self._spcl = self._pellets | self._walls
-        self._wrn1_tiles = self._get_wrn_set(
-            [self._get_adjacent(loc, 1) for loc in self._pellets])
-        self._wrn2_tiles = self._get_wrn_set(
-            [self._get_adjacent(loc, 2) for loc in self._pellets])
 
         # Initialize the MazeAgent and ready simulation!
         self._goal_reached = False
@@ -76,36 +61,15 @@ class Environment:
 
         # Keep a copy of the original maze
         self._og_maze = copy.deepcopy(self._maze)
-        self._og_maze[self._player_loc[1]
-                      ][self._player_loc[0]] = Constants.SAFE_BLOCK
+        self._og_maze[self._player_loc[1]][self._player_loc[0]] = Constants.SAFE_BLOCK
 
         # Initialize MazeAgent here
         self._agent = PacmanAgent(maze)
         self._index = 0  # keep track of which loop we're on
 
-        # Graphics Test
-
-        # window.geometry("600x600")
-        # canvas = Canvas(window, width=500, height=300)
-        # # canvas.pack()
-
-        # self.filename = "ui/images/red_ghost_trans.png"
-        # # img = Image.open(self.filename)
-        # img = PhotoImage(file=self.filename)
-        # canvas.create_image(0, 0, image=img)
-        # # img = ImageTk.PhotoImage(img)
-
-        # # canvas.create_image(0, 0, anchor=NW, image=img)
-        # canvas.create_rectangle(0, 0, 80, 80, fill="purple")
-        # # canvas.create_image(0, 0, anchor=NW, image=img)
-        # # canvas.create_rectangle(100, 100, 80, 80, fill="pink")
-        # # canvas.create_rectangle(300, 300, 80, 80, fill="green")
-
-        # window.update()
-
         # Graphics GUI Stuff (tk)
         self._window = window
-        self._maze_ui = MazeUI(self._window, self._maze)
+        self._maze_ui = MazeUI(self._window, self._maze, self._debug)
 
     ##################################################################
     # Methods
@@ -115,7 +79,7 @@ class Environment:
         """
         Returns the player's current location as a maze tuple
         """
-        return self._player_loc
+        return copy.deepcopy(self._player_loc)
 
     def move(self):
 
@@ -125,25 +89,26 @@ class Environment:
             # Wait for the button to be pressed to step forward
             self._maze_ui.btn.wait_variable(self._maze_ui.btn_var)
 
-        print("index: ", self._index)
-        print("*** NEW TICK CYCLE ***")
-
-        print("GHOSTS:")
-        print(self._ghosts)
+        if self._debug:
+            print("index: ", self._index)
+            print("*** NEW TICK CYCLE ***")
+    
+            print("GHOSTS:")
+            print(self._ghosts)
 
         self._index += 1
 
         # Get player's next move in their plan, then execute
         mp = MazeProblem(self._maze)
         next_act = self._agent.choose_action(self._maze, mp.legal_actions(self.get_player_loc()))
-        print("next_act: ", next_act)
+        if self._debug:
+            print("next_act: ", next_act)
         self._move_request(next_act)
 
         penalty = Constants.get_mov_penalty()
         self._score -= penalty
         if self._verbose:
             print(
-                # "\nCurrent Loc: " + str(self._player_loc) + " [" + self._ag_tile + "]" +
                 "\nCurrent Loc: " + str(self._player_loc) +
                 "\nLast Move: " + str(next_act) +
                 "\nScore: " + str(self._score) +
@@ -151,45 +116,46 @@ class Environment:
                 "\n")
 
         if self._ghost_test(self._player_loc):
-            print("PACMAN MOVED AND HIT A GHOST!  DONE!")
-            print(self._player_loc)
+            print("PACMAN MOVED AND HIT A GHOST!  GAME OVER!")
+            if self._debug:
+                print(self._player_loc)
             self._insert_block(self._player_loc, Constants.DEATH_BLOCK)
             self._cleanup()
             return
         
         if self._pellets_eaten == self._n_pellets:
-            print("ALL PELLETS EATEN! HUZZAH YOU GLUTTON!  DONE!")
+            print("ALL PELLETS EATEN! HUZZAH YOU GLUTTON!  GAME OVER!")
             self._cleanup()
             return
 
-        print("GHOSTS MOVING ...")
-        print(self._ghosts)
+        if self._debug:
+            print("GHOSTS MOVING ...")
+            print(self._ghosts)
 
         self._move_ghosts()
         self._display()
         print("\n")
         if self._ghost_test(self._player_loc):
-            print("GHOSTS MOVED AND HIT PACMAN!  DONE!")
-            print(self._player_loc)
+            print("GHOSTS MOVED AND HIT PACMAN!  GAME OVER!")
+            if self._debug:
+                print(self._player_loc)
             self._insert_block(self._player_loc, Constants.DEATH_BLOCK)
             self._cleanup()
             return
 
-        # if self._verbose:
-        #     print("[!] Game Complete! Final Score: " + str(self._score))
-
-        # # MazeUI Stuff
+        # MazeUI Stuff
 
         if self._step:
             # Wait for the button to be pressed to step forward
-            # self._maze_ui.btn.wait_variable(self._maze_ui.btn_var)
             self._window.after(0, self.move)
         else:
             self._window.after(self._tick_length * 1000, self.move)
 
+
     ##################################################################
     # "Private" Helper Methods
     ##################################################################
+    
     def _cleanup(self):
         if not self._step:
             # One more sleep before death if in animation mode
@@ -374,7 +340,6 @@ if __name__ == "__main__":
 
     # Start the environment
     # Call with tick_length = 0 for instant games
-    # TODO: Add command-line options so debug can be passed as a flag
     step = True
     debug = False
     env = Environment(Constants.MAZE, window, debug=args.debug, step=args.step)
@@ -386,5 +351,3 @@ if __name__ == "__main__":
     window.mainloop()
     print("END MAIN LOOP")
 
-    # Command-line
-    # env.start_mission()

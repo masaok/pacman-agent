@@ -50,8 +50,12 @@ class PacmanMazeDataset(Dataset):
         :maze: String grid representation of the maze and its entities
         :returns: 1-D numerical pytorch tensor representing the maze
         '''
-        # TODO: Task 1 - Part 1
-        return torch.tensor([])
+        result = []
+        for row in maze:
+            for cell in row:
+                result.append(PacmanMazeDataset.maze_entity_indexes[cell])
+        
+        return torch.flatten(F.one_hot(torch.tensor(result, dtype=torch.long), num_classes=len(PacmanMazeDataset.maze_entity_indexes))).to(torch.float).to(Constants.DEVICE)
     
     def vectorize_move(move):
         '''
@@ -64,8 +68,7 @@ class PacmanMazeDataset(Dataset):
         :move: String representing an action to be taken
         :returns: One-hot vector representation of that action.
         '''
-        # TODO: Task 1 - Part 2
-        return torch.tensor([])
+        return F.one_hot(torch.tensor(PacmanMazeDataset.move_indexes[move]), num_classes=len(PacmanMazeDataset.move_indexes)).to(torch.float).to(Constants.DEVICE)
 
 
 class PacNet(nn.Module):
@@ -84,7 +87,18 @@ class PacNet(nn.Module):
         :maze: The Pacman Maze structure on which this PacNet will be trained
         """
         super(PacNet, self).__init__()
-        # TODO: Task 3 Here
+        self.flatten = nn.Flatten()
+        rows = len(maze)
+        cols = len(maze[0])
+        entities = len(Constants.ENTITIES)
+        moves = len(Constants.MOVES)
+        self.linear_relu_stack = nn.Sequential(
+            nn.Linear(rows * cols * entities, 256),
+            nn.ReLU(),
+            nn.Linear(256, 128),
+            nn.ReLU(),
+            nn.Linear(128, moves),
+        )
 
     def forward(self, x):
         """
@@ -125,11 +139,25 @@ if __name__ == "__main__":
     pacman agent.
     See: https://pytorch.org/tutorials/beginner/basics/optimization_tutorial.html
     """
-    # TODO: Task 2 Here
+    result = MazeGen.get_labeled_data(Constants.MAZE, Constants.N_SAMPLES)
+    data = PacmanMazeDataset(result)
+    train_dataloader = DataLoader(data, batch_size=4, shuffle=True)
+    train_features, train_labels = next(iter(train_dataloader))
     
-    # TODO: Task 4 Here
+    # NN Construction
+    model = PacNet(Constants.MAZE).to(Constants.DEVICE)
     
-    # TODO: Task 5 Here
+    # Optimization
+    learning_rate = 1e-3
+    batch_size = 64
+    epochs = 100
+    loss_fn = nn.CrossEntropyLoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    for t in range(epochs):
+        print(f"Epoch {t+1}\n-------------------------------")
+        train_loop(train_dataloader, model, loss_fn, optimizer)
+    print("Done!")
     
-    # TODO: Task 6 Here
+    # Save weights
+    torch.save(model.state_dict(), Constants.PARAM_PATH)
     

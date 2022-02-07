@@ -27,9 +27,8 @@ class PacmanAgent:
         :maze: The maze on which this agent is to operate. Must be the same maze
         structure as the one on which this agent's model was trained.
         """
-        self.model = PacNet(maze).to(Constants.DEVICE)
-        self.model.load_state_dict(torch.load(Constants.PARAM_PATH))
-        self.model.eval()
+        # TODO: Task 7 Here
+        return
 
     def choose_action(self, perception, legal_actions):
         """
@@ -39,8 +38,5 @@ class PacmanAgent:
         :legal_actions: Map of legal actions to their next agent states
         :return: Action choice from the set of legal_actions
         """
-        maze_vectorized = PacmanMazeDataset.vectorize_maze(perception)
-        move_probs = list(self.model(maze_vectorized))
-        move_probs = {move: move_probs[moveIdx] for moveIdx, move in enumerate(Constants.MOVES)}
-        move_probs = {move: prob for (move, prob) in move_probs.items() if move in {s[0] for s in legal_actions}}
-        return max(move_probs, key=move_probs.get) if len(move_probs) > 0 else random.choice(legal_actions.keys())
+        # TODO: Task 8 Here
+        return random.choice(Constants.MOVES)

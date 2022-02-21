@@ -20,6 +20,8 @@ import argparse
 
 
 class Environment:
+    
+    running_env = None
 
     ##################################################################
     # Constructor
@@ -296,14 +298,34 @@ class Environment:
             self._maze[new_loc[1]][new_loc[0]] = Constants.GHOST_BLOCK
 
             index += 1
+            
+    def run_game (debug, step):
+        window = tk.Tk()
+        window.protocol('WM_DELETE_WINDOW', on_exit)
+    
+        # Add a window title
+        # https://pythonguides.com/python-tkinter-title/
+        # https://stackoverflow.com/questions/2395431/using-tkinter-in-python-to-edit-the-title-bar
+        window.title("Pacman Reinforcement Learning")
+    
+        # Start the environment
+        # Call with tick_length = 0 for instant games
+        Environment.running_env = Environment(Constants.MAZE, window, debug=debug, step=step)
+    
+        # Graphical
+        Environment.running_env.move()
+        print("END MAIN MOVE")
+    
+        window.mainloop()
+        print("END MAIN LOOP")
 
 
 # Exit the Python app cleanly in terminal
 # Credit: https://stackoverflow.com/q/69917376/10415969
 def on_exit():
-    env._maze_ui.window.destroy()  # env window
-    env._maze_ui.btn_var.set("")
-    exit(0)
+    Environment.running_env._maze_ui.window.destroy()  # env window
+    Environment.running_env._maze_ui.btn_var.set("")
+    # exit(0)
 
 if __name__ == "__main__":
 
@@ -330,24 +352,6 @@ if __name__ == "__main__":
     if args.animate:
         args.step = False
 
-    window = tk.Tk()
-    window.protocol('WM_DELETE_WINDOW', on_exit)
-
-    # Add a window title
-    # https://pythonguides.com/python-tkinter-title/
-    # https://stackoverflow.com/questions/2395431/using-tkinter-in-python-to-edit-the-title-bar
-    window.title("Pacman Imitation Learning")
-
-    # Start the environment
-    # Call with tick_length = 0 for instant games
-    step = True
-    debug = False
-    env = Environment(Constants.MAZE, window, debug=args.debug, step=args.step)
-
-    # Graphical
-    env.move()
-    print("END MAIN MOVE")
-
-    window.mainloop()
-    print("END MAIN LOOP")
+    Environment.run_game(False, False)
+    Environment.run_game(False, False)
 

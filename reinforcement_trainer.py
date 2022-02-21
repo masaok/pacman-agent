@@ -12,31 +12,28 @@ import torch.nn.functional as F
 from torch import nn
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
+from collections import namedtuple, deque
 from constants import *
 from maze_gen import MazeGen
 
-class PacmanMazeDataset(Dataset):
-    """
-    PyTorch Dataset extension used to vectorize Pacman mazes consisting of the
-    entities listed in Constants.py to be used for neural network training
-    See: https://pytorch.org/tutorials/beginner/basics/data_tutorial.html
-    """
-    
-    # [!] Class maps that may be useful for vectorizing the maze
-    maze_entity_indexes = {entity: index for index, entity in enumerate(Constants.ENTITIES)}
-    move_indexes = {move: index for index, move in enumerate(Constants.MOVES)}
-    
-    def __init__(self, training_data):
-        self.training_data = training_data
-        print(self.__getitem__(0))
+Transition = namedtuple('Transition',
+                        ('state', 'action', 'next_state', 'reward'))
+
+
+class ReplayMemory(object):
+
+    def __init__(self, capacity):
+        self.memory = deque([],maxlen=capacity)
+
+    def push(self, *args):
+        """Save a transition"""
+        self.memory.append(Transition(*args))
+
+    def sample(self, batch_size):
+        return random.sample(self.memory, batch_size)
 
     def __len__(self):
-        return len(self.training_data)
-    
-    def __getitem__(self, idx):
-        row = self.training_data.iloc[idx]
-        maze, move = row["X"], row["y"]
-        return PacmanMazeDataset.vectorize_maze(maze), PacmanMazeDataset.vectorize_move(move)
+        return len(self.memory)
     
     def vectorize_maze(maze):
         '''
@@ -50,8 +47,12 @@ class PacmanMazeDataset(Dataset):
         :maze: String grid representation of the maze and its entities
         :returns: 1-D numerical pytorch tensor representing the maze
         '''
-        # TODO: Task 1 - Part 1
-        return torch.tensor([])
+        result = []
+        for row in maze:
+            for cell in row:
+                result.append(PacmanMazeDataset.maze_entity_indexes[cell])
+        
+        return torch.flatten(F.one_hot(torch.tensor(result, dtype=torch.long), num_classes=len(PacmanMazeDataset.maze_entity_indexes))).to(torch.float).to(Constants.DEVICE)
     
     def vectorize_move(move):
         '''
@@ -64,8 +65,7 @@ class PacmanMazeDataset(Dataset):
         :move: String representing an action to be taken
         :returns: One-hot vector representation of that action.
         '''
-        # TODO: Task 1 - Part 2
-        return torch.tensor([])
+        return F.one_hot(torch.tensor(PacmanMazeDataset.move_indexes[move]), num_classes=len(PacmanMazeDataset.move_indexes)).to(torch.float).to(Constants.DEVICE)
 
 
 class PacNet(nn.Module):
@@ -84,7 +84,18 @@ class PacNet(nn.Module):
         :maze: The Pacman Maze structure on which this PacNet will be trained
         """
         super(PacNet, self).__init__()
-        # TODO: Task 3 Here
+        self.flatten = nn.Flatten()
+        rows = len(maze)
+        cols = len(maze[0])
+        entities = len(Constants.ENTITIES)
+        moves = len(Constants.MOVES)
+        self.linear_relu_stack = nn.Sequential(
+            nn.Linear(rows * cols * entities, 256),
+            nn.ReLU(),
+            nn.Linear(256, 128),
+            nn.ReLU(),
+            nn.Linear(128, moves),
+        )
 
     def forward(self, x):
         """

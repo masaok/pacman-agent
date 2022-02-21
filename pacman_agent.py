@@ -11,7 +11,7 @@ from torch import nn
 from pathfinder import *
 from queue import Queue
 from constants import *
-from pac_trainer import *
+from reinforcement_trainer import *
 
 class PacmanAgent:
     '''

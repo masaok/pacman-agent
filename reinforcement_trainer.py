@@ -107,40 +107,4 @@ class PacNet(nn.Module):
         return logits
 
 
-def train_loop(dataloader, model, loss_fn, optimizer):
-    """
-    PyTorch Neural Network optimization loop; need not be modified unless tweaks are
-    desired.
-    See: https://pytorch.org/tutorials/beginner/basics/optimization_tutorial.html
-    """
-    size = len(dataloader.dataset)
-    for batch, (X, y) in enumerate(dataloader):
-        # Compute prediction and loss
-        pred = model(X)
-        loss = loss_fn(pred, y)
-
-        # Backpropagation
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-
-        if batch % 100 == 0:
-            loss, current = loss.item(), batch * len(X)
-            print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
-
-
-if __name__ == "__main__":
-    """
-    Main method used to load training data, construct PacNet, and then
-    train it, finally saving the network's parameters for use by the
-    pacman agent.
-    See: https://pytorch.org/tutorials/beginner/basics/optimization_tutorial.html
-    """
-    # TODO: Task 2 Here
-    
-    # TODO: Task 4 Here
-    
-    # TODO: Task 5 Here
-    
-    # TODO: Task 6 Here
     

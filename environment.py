@@ -352,6 +352,5 @@ if __name__ == "__main__":
     if args.animate:
         args.step = False
 
-    Environment.run_game(False, False)
-    Environment.run_game(False, False)
+    # Environment.run_game(False, False)
 

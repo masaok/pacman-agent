@@ -43,6 +43,7 @@ class Environment:
         self._debug = debug
         self._verbose = verbose
         self._step = step
+        self._moves = 0
 
         # Maze block sets
         self._ghosts = self._mp.get_ghosts()
@@ -51,7 +52,6 @@ class Environment:
         self._player_loc = self._initial_loc = self._mp.get_player_loc()
 
         # Score keeping
-        self._score = 0
         self._pellets_eaten = 0
         self._n_pellets = len(self._pellets)
         self._spcl = self._pellets | self._walls
@@ -85,6 +85,15 @@ class Environment:
 
     def move(self):
 
+        self._moves += 1
+        if self._moves > Constants.MAX_MOVES:
+            print("TIME's UP!  GAME OVER!")
+            if self._debug:
+                print(self._player_loc)
+            self._insert_block(self._player_loc, Constants.TIME_BLOCK)
+            self._cleanup()
+            return
+        
         # Draw the Maze first, before any movement
         self._maze_ui.draw_maze()
         if self._step:
@@ -101,20 +110,17 @@ class Environment:
         self._index += 1
 
         # Get player's next move in their plan, then execute
-        state = copy(self._maze)
+        state = copy.deepcopy(self._maze)
         mp = MazeProblem(self._maze)
         next_act = self._agent.choose_action(self._maze, mp.legal_actions(self.get_player_loc()))
         if self._debug:
             print("next_act: ", next_act)
         self._move_request(next_act)
 
-        penalty = Constants.get_mov_penalty()
-        self._score -= penalty
         if self._verbose:
             print(
                 "\nCurrent Loc: " + str(self._player_loc) +
                 "\nLast Move: " + str(next_act) +
-                "\nScore: " + str(self._score) +
                 "\nPellets Eaten: " + str(self._pellets_eaten) +
                 "\n")
 
@@ -128,6 +134,7 @@ class Environment:
         
         if self._pellets_eaten == self._n_pellets:
             print("ALL PELLETS EATEN! HUZZAH YOU GLUTTON!  GAME OVER!")
+            self._insert_block(self._player_loc, Constants.WIN_BLOCK)
             self._cleanup()
             return
 
@@ -146,7 +153,7 @@ class Environment:
             self._cleanup()
             return
 
-        next_state = copy(self._maze)
+        next_state = copy.deepcopy(self._maze)
         self._agent.give_transition(state, next_act, next_state)
 
         # MazeUI Stuff
@@ -222,7 +229,6 @@ class Environment:
         else:  # otherwise, process the new location
             if self._pellet_test(new_loc):
                 self._pellets_eaten += 1
-                self._score += Constants.get_pellet_reward()
                 if self._debug:
                     print("PELLET EATEN!!!")
                     print("PELLET SCORE:", self._pellets_eaten)
@@ -314,10 +320,10 @@ class Environment:
     
         # Start the environment
         # Call with tick_length = 0 for instant games
-        Environment.running_env = Environment(Constants.MAZE, window, debug=debug, step=step)
+        running_env = Environment(Constants.MAZE, window, debug=debug, step=step)
     
         # Graphical
-        Environment.running_env.move()
+        running_env.move()
         print("END MAIN MOVE")
     
         window.mainloop()

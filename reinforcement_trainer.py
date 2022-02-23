@@ -20,6 +20,10 @@ Transition = namedtuple('Transition',
 
 
 class ReplayMemory(object):
+    
+    # [!] Class maps that may be useful for vectorizing the maze
+    maze_entity_indexes = {entity: index for index, entity in enumerate(Constants.ENTITIES)}
+    move_indexes = {move: index for index, move in enumerate(Constants.MOVES)}
 
     def __init__(self, capacity):
         self.memory = deque([],maxlen=capacity)
@@ -49,9 +53,9 @@ class ReplayMemory(object):
         result = []
         for row in maze:
             for cell in row:
-                result.append(PacmanMazeDataset.maze_entity_indexes[cell])
+                result.append(ReplayMemory.maze_entity_indexes[cell])
         
-        return torch.flatten(F.one_hot(torch.tensor(result, dtype=torch.long), num_classes=len(PacmanMazeDataset.maze_entity_indexes))).to(torch.float).to(Constants.DEVICE)
+        return torch.flatten(F.one_hot(torch.tensor(result, dtype=torch.long), num_classes=len(ReplayMemory.maze_entity_indexes))).to(torch.float).to(Constants.DEVICE)
     
     def vectorize_move(move):
         '''
@@ -64,7 +68,7 @@ class ReplayMemory(object):
         :move: String representing an action to be taken
         :returns: One-hot vector representation of that action.
         '''
-        return F.one_hot(torch.tensor(PacmanMazeDataset.move_indexes[move]), num_classes=len(PacmanMazeDataset.move_indexes)).to(torch.float).to(Constants.DEVICE)
+        return F.one_hot(torch.tensor(ReplayMemory.move_indexes[move]), num_classes=len(ReplayMemory.move_indexes)).to(torch.float).to(Constants.DEVICE)
 
 
 class PacNet(nn.Module):

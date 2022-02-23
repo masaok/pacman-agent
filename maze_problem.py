@@ -16,7 +16,7 @@ class MazeProblem:
     # Static COST_MAP for maze components and the cost to move onto them
     # Any maze block not listed here is assumed to have a cost of 1
     # HINT: You can add block types to this!
-    COST_MAP = {Constants.GHOST_BLOCK: Constants.get_ghost_penalty()}
+    COST_MAP = {Constants.GHOST_BLOCK: -Constants.MAX_MOVES}
     
     def __init__(self, maze):
         """
@@ -99,5 +99,5 @@ class MazeProblem:
         """
         cm = MazeProblem.COST_MAP
         cell = self.maze[state[1]][state[0]]
-        return cm[cell] if cell in cm else Constants.get_mov_penalty()
+        return cm[cell] if cell in cm else 1
     

@@ -12,42 +12,9 @@ import torch
 
 class Constants:
 
-    @staticmethod
-    def get_min_score():
-        """
-        Returns the minimum score that, if reached, will end the game,
-        and bring great shame to your agent
-        """
-        return -100
-
-    @staticmethod
-    def get_pellet_reward():
-        """
-        Returns the reward of stepping on a pellet
-        """
-        return 0.5
-
-    @staticmethod
-    def get_mov_penalty():
-        """
-        Returns the cost of a movement onto any safe tile
-        """
-        return 1
-    
-    @staticmethod
-    def get_ghost_penalty():
-        """
-        Returns the cost of a movement onto a ghost
-        """
-        return 20
-    
-    @staticmethod
-    def get_ghost_epsilon():
-        """
-        Returns the likelihood that a Ghost makes a random choice, rather
-        than chasing Pacman
-        """
-        return 0.1
+    # Game-specific constants
+    MAX_MOVES = 100
+    GHOST_EPSILON = 0.1
 
     # Movement constants + location modifiers
     MOVES = ["U", "D", "L", "R"]
@@ -60,6 +27,8 @@ class Constants:
     SAFE_BLOCK = "."
     PLR_BLOCK = "P"
     DEATH_BLOCK = "D"
+    WIN_BLOCK = "W"
+    TIME_BLOCK = "T"
     ENTITIES = [WALL_BLOCK, GHOST_BLOCK, PELLET_BLOCK, SAFE_BLOCK, PLR_BLOCK]
     
     # Used to determine whether GPU acceleration is available or not
@@ -70,7 +39,7 @@ class Constants:
     MAZE = ["XXXXXXXXX",
             "X..O...PX",
             "X.......X",
-            "X..XXXO.X",
+            "XG.XXXO.X",
             "XO.....OX",
             "X.......X",
             "XXXXXXXXX"]

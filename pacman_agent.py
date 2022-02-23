@@ -7,6 +7,7 @@ import time
 import random
 import numpy as np
 import torch
+from os.path import exists
 from torch import nn
 from pathfinder import *
 from queue import Queue
@@ -37,12 +38,12 @@ class PacmanAgent:
         
         # TODO: What if params don't exist or aren't from the right device?
         self.memory = ReplayMemory(1000)
-        print(Constants.DEVICE)
         self.pol_net = PacNet(maze).to(Constants.DEVICE)
         self.tar_net = PacNet(maze).to(Constants.DEVICE)
-        self.pol_net.load_state_dict(torch.load(Constants.PARAM_PATH))
+        if exists(Constants.DEVICE):
+            self.pol_net.load_state_dict(torch.load(Constants.PARAM_PATH))
+            self.tar_net.load_state_dict(pol_net.state_dict())
         self.pol_net.eval()
-        self.tar_net.load_state_dict(pol_net.state_dict())
         self.tar_net.eval()
 
     def choose_action(self, perception, legal_actions):
@@ -53,8 +54,8 @@ class PacmanAgent:
         :legal_actions: Map of legal actions to their next agent states
         :return: Action choice from the set of legal_actions
         """
-        maze_vectorized = PacmanMazeDataset.vectorize_maze(perception)
-        move_probs = list(self.og_net(maze_vectorized))
+        maze_vectorized = ReplayMemory.vectorize_maze(perception)
+        move_probs = list(self.pol_net(maze_vectorized))
         move_probs = {move: move_probs[moveIdx] for moveIdx, move in enumerate(Constants.MOVES)}
         move_probs = {move: prob for (move, prob) in move_probs.items() if move in {s[0] for s in legal_actions}}
         return max(move_probs, key=move_probs.get) if len(move_probs) > 0 else random.choice(legal_actions.keys())

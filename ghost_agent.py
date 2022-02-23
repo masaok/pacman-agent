@@ -23,7 +23,7 @@ class GhostAgent:
             str: direction to move
         """
 
-        will_chase = random.uniform(0, 1) > Constants.get_ghost_epsilon()
+        will_chase = random.uniform(0, 1) > Constants.GHOST_EPSILON
 
         # Chases Pacman by plotting the next best move to close the distance using A* search
         # if the given roll was greater than the ghost's epsilon chance

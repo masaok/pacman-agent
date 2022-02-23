@@ -101,6 +101,7 @@ class Environment:
         self._index += 1
 
         # Get player's next move in their plan, then execute
+        state = copy(self._maze)
         mp = MazeProblem(self._maze)
         next_act = self._agent.choose_action(self._maze, mp.legal_actions(self.get_player_loc()))
         if self._debug:
@@ -144,6 +145,9 @@ class Environment:
             self._insert_block(self._player_loc, Constants.DEATH_BLOCK)
             self._cleanup()
             return
+
+        next_state = copy(self._maze)
+        self._agent.give_transition(state, next_act, next_state)
 
         # MazeUI Stuff
 
@@ -352,5 +356,5 @@ if __name__ == "__main__":
     if args.animate:
         args.step = False
 
-    # Environment.run_game(False, False)
+    Environment.run_game(False, False)
 

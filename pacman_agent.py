@@ -13,6 +13,7 @@ from pathfinder import *
 from queue import Queue
 from constants import *
 from reinforcement_trainer import *
+from maze_problem import *
 
 class PacmanAgent:
     '''
@@ -20,8 +21,9 @@ class PacmanAgent:
     module.
     '''
 
-    BATCH_SIZE = 128
+    BATCH_SIZE = 32
     GAMMA = 0.999
+    EPS_GREEDY = 0.1
     EPS_START = 0.9
     EPS_END = 0.05
     EPS_DECAY = 200
@@ -40,11 +42,13 @@ class PacmanAgent:
         self.memory = ReplayMemory(1000)
         self.pol_net = PacNet(maze).to(Constants.DEVICE)
         self.tar_net = PacNet(maze).to(Constants.DEVICE)
+        self.steps = 0
         if exists(Constants.DEVICE):
             self.pol_net.load_state_dict(torch.load(Constants.PARAM_PATH))
             self.tar_net.load_state_dict(pol_net.state_dict())
-        self.pol_net.eval()
+        # self.pol_net.eval()
         self.tar_net.eval()
+        self.optimizer = torch.optim.RMSprop(self.pol_net.parameters())
 
     def choose_action(self, perception, legal_actions):
         """
@@ -54,56 +58,86 @@ class PacmanAgent:
         :legal_actions: Map of legal actions to their next agent states
         :return: Action choice from the set of legal_actions
         """
+        if random.random() < PacmanAgent.EPS_GREEDY:
+            return random.choice(Constants.MOVES)
         maze_vectorized = ReplayMemory.vectorize_maze(perception)
         move_probs = list(self.pol_net(maze_vectorized))
         move_probs = {move: move_probs[moveIdx] for moveIdx, move in enumerate(Constants.MOVES)}
         move_probs = {move: prob for (move, prob) in move_probs.items() if move in {s[0] for s in legal_actions}}
         return max(move_probs, key=move_probs.get) if len(move_probs) > 0 else random.choice(legal_actions.keys())
     
+    def get_reward(self, state, action, next_state):
+        last_maze = MazeProblem(state)
+        curr_maze = MazeProblem(next_state)
+        reward = -0.01
+        
+        if len(curr_maze.get_pellets()) < len(last_maze.get_pellets()):
+            reward += 1
+        
+        if not curr_maze.get_win_state() == None:
+            reward += 1
+            
+        if not curr_maze.get_death_state() == None:
+            reward -= 10
+        
+        return reward
+    
     def give_transition(self, state, action, next_state):
-        return
+        reward = torch.tensor([self.get_reward(state, action, next_state)], device=Constants.DEVICE)
+        self.memory.push(
+            ReplayMemory.vectorize_maze(state), 
+            ReplayMemory.vectorize_move(action), 
+            ReplayMemory.vectorize_maze(next_state), 
+            reward
+        )
+        self.optimize_model()
+        self.steps += 1
+        if self.steps % PacmanAgent.TARGET_UPDATE == 0:
+            self.tar_net.load_state_dict(self.pol_net.state_dict())
+            torch.save(self.pol_net.state_dict(), Constants.PARAM_PATH)
     
-    def optimize_model():
-        if len(self.memory) < BATCH_SIZE:
+    def optimize_model(self):
+        if len(self.memory) < PacmanAgent.BATCH_SIZE:
             return
-        transitions = self.memory.sample(BATCH_SIZE)
+        episodes = self.memory.sample(PacmanAgent.BATCH_SIZE)
         # Transpose the batch (see https://stackoverflow.com/a/19343/3343043 for
-        # detailed explanation). This converts batch-array of Transitions
+        # detailed explanation). This converts batch-array of episodes
         # to Transition of batch-arrays.
-        batch = Transition(*zip(*transitions))
+        # batch = Episode(*zip(*episodes))
     
-        # Compute a mask of non-final states and concatenate the batch elements
+        # TODO: Compute a mask of non-final states and concatenate the batch elements
         # (a final state would've been the one after which simulation ended)
-        non_final_mask = torch.tensor(tuple(map(lambda s: s is not None,
-                                              batch.next_state)), device=Constants.DEVICE, dtype=torch.bool)
-        non_final_next_states = torch.cat([s for s in batch.next_state
-                                                    if s is not None])
-        state_batch = torch.cat(batch.state)
-        action_batch = torch.cat(batch.action)
-        reward_batch = torch.cat(batch.reward)
     
         # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
         # columns of actions taken. These are the actions which would've been taken
         # for each batch state according to self.pol_net
-        state_action_values = self.pol_net(state_batch).gather(1, action_batch)
+        state_action_values = torch.zeros(len(Constants.MOVES), device=Constants.DEVICE)
+        for e in episodes:
+            action = e.action.tolist()
+            action_index = action.index(1)
+            state_action_values[action_index] += self.pol_net(e.state)[action_index]
+        # state_action_values = [self.pol_net(e.state).mask_select(0, e.action.to(torch.int64)) for e in episodes]
+        print("Q(s,a): ", state_action_values)
+        next_state_action_values = torch.tensor([self.tar_net(e.next_state).max(0)[0] for e in episodes], device=Constants.DEVICE)
+        print("Q(s',a'): ", next_state_action_values)
+        rewards = torch.tensor([e.reward for e in episodes], device=Constants.DEVICE)
+        print("R: ", rewards)
     
         # Compute V(s_{t+1}) for all next states.
         # Expected values of actions for non_final_next_states are computed based
         # on the "older" self.tar_net; selecting their best reward with max(1)[0].
         # This is merged based on the mask, such that we'll have either the expected
         # state value or 0 in case the state was final.
-        next_state_values = torch.zeros(BATCH_SIZE, device=device)
-        next_state_values[non_final_mask] = self.tar_net(non_final_next_states).max(1)[0].detach()
-        # Compute the expected Q values
-        expected_state_action_values = (next_state_values * GAMMA) + reward_batch
+        expected_state_action_values = (next_state_action_values * PacmanAgent.GAMMA) + rewards
+        print("Target: ", expected_state_action_values)
     
         # Compute Huber loss
         criterion = nn.SmoothL1Loss()
-        loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
+        loss = criterion(state_action_values, expected_state_action_values)
     
         # Optimize the model
-        optimizer.zero_grad()
+        self.optimizer.zero_grad()
         loss.backward()
         for param in self.pol_net.parameters():
             param.grad.data.clamp_(-1, 1)
-        optimizer.step()
+        self.optimizer.step()

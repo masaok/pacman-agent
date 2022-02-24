@@ -28,6 +28,9 @@ class MazeProblem:
         self._ghosts = set()
         self._pellets = set()
         self._walls = set()
+        self._death_state = None
+        self._win_state = None
+        self._timeout_state = None
 
         # Scan for blocks in the input maze
         for (row_num, row) in enumerate(maze):
@@ -40,6 +43,12 @@ class MazeProblem:
                     self._pellets.add((col_num, row_num))
                 if cell == Constants.PLR_BLOCK:
                     self._player_loc = self._initial_loc = (col_num, row_num)
+                if cell == Constants.DEATH_BLOCK:
+                    self._death_state = (col_num, row_num)
+                if cell == Constants.WIN_BLOCK:
+                    self._win_state = (col_num, row_num)
+                if cell == Constants.TIMEOUT_BLOCK:
+                    self._timeout_state = (col_num, row_num)
 
     def get_player_loc(self):
         """
@@ -64,6 +73,33 @@ class MazeProblem:
         Returns a set containing the locations of all walls in the maze
         """
         return copy.deepcopy(self._walls)
+    
+    def get_win_state(self):
+        """
+        Returns the position of a win-condition (where Pacman was upon eating the
+        last pellet), or None if not a win-state
+        """
+        return copy.deepcopy(self._win_state)
+    
+    def get_death_state(self):
+        """
+        Returns the position of a death-condition (where Pacman was upon moving onto
+        a ghost or having a ghost move onto them), or None if not a death-state
+        """
+        return copy.deepcopy(self._death_state)
+    
+    def get_timeout_state(self):
+        """
+        Returns the position of a timeout-condition (where Pacman was when MAX_MOVES
+        were reached), or None if not a timeout-state
+        """
+        return copy.deepcopy(self._timeout_state)
+    
+    def is_terminal(self):
+        """
+        Returns True if this state is a win, death, or timeout state -- False otherwise
+        """
+        return any([self._win_state, self._death_state, self._timeout_state])
         
     def legal_actions(self, state):
         """
@@ -94,8 +130,9 @@ class MazeProblem:
         """
         Returns the cost of moving onto the given state, and employs
         the MazeProblem's COST_MAP
+        [!] THIS IS USED FOR PATHFINDING ONLY, NOT RELATED TO REWARD
         :state: A maze location tuple
-        :returns:
+        :returns: Pathfinding cost of given state
         """
         cm = MazeProblem.COST_MAP
         cell = self.maze[state[1]][state[0]]

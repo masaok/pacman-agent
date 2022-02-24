@@ -68,6 +68,7 @@ class Environment:
         # Initialize MazeAgent here
         self._agent = PacmanAgent(maze)
         self._index = 0  # keep track of which loop we're on
+        self._last_act = None
 
         # Graphics GUI Stuff (tk)
         self._window = window
@@ -84,13 +85,16 @@ class Environment:
         return copy.deepcopy(self._player_loc)
 
     def move(self):
+        state = copy.deepcopy(self._maze)
 
         self._moves += 1
         if self._moves > Constants.MAX_MOVES:
             print("TIME's UP!  GAME OVER!")
             if self._debug:
                 print(self._player_loc)
-            self._insert_block(self._player_loc, Constants.TIME_BLOCK)
+            self._insert_block(self._player_loc, Constants.TIMEOUT_BLOCK)
+            next_state = copy.deepcopy(self._maze)
+            self._agent.give_transition(state, self._last_act, next_state)
             self._cleanup()
             return
         
@@ -110,9 +114,9 @@ class Environment:
         self._index += 1
 
         # Get player's next move in their plan, then execute
-        state = copy.deepcopy(self._maze)
         mp = MazeProblem(self._maze)
         next_act = self._agent.choose_action(self._maze, mp.legal_actions(self.get_player_loc()))
+        self._last_act = next_act
         if self._debug:
             print("next_act: ", next_act)
         self._move_request(next_act)
@@ -122,6 +126,7 @@ class Environment:
                 "\nCurrent Loc: " + str(self._player_loc) +
                 "\nLast Move: " + str(next_act) +
                 "\nPellets Eaten: " + str(self._pellets_eaten) +
+                "\nMoves: " + str(self._moves) + " / " + str(Constants.MAX_MOVES) +
                 "\n")
 
         if self._ghost_test(self._player_loc):
@@ -129,12 +134,16 @@ class Environment:
             if self._debug:
                 print(self._player_loc)
             self._insert_block(self._player_loc, Constants.DEATH_BLOCK)
+            next_state = copy.deepcopy(self._maze)
+            self._agent.give_transition(state, next_act, next_state)
             self._cleanup()
             return
         
         if self._pellets_eaten == self._n_pellets:
             print("ALL PELLETS EATEN! HUZZAH YOU GLUTTON!  GAME OVER!")
             self._insert_block(self._player_loc, Constants.WIN_BLOCK)
+            next_state = copy.deepcopy(self._maze)
+            self._agent.give_transition(state, next_act, next_state)
             self._cleanup()
             return
 
@@ -150,6 +159,8 @@ class Environment:
             if self._debug:
                 print(self._player_loc)
             self._insert_block(self._player_loc, Constants.DEATH_BLOCK)
+            next_state = copy.deepcopy(self._maze)
+            self._agent.give_transition(state, next_act, next_state)
             self._cleanup()
             return
 
@@ -162,7 +173,7 @@ class Environment:
             # Wait for the button to be pressed to step forward
             self._window.after(0, self.move)
         else:
-            self._window.after(self._tick_length * 1000, self.move)
+            self._window.after(Constants.TICK_LEN, self.move)
 
 
     ##################################################################
@@ -311,7 +322,7 @@ class Environment:
             
     def run_game (debug, step):
         window = tk.Tk()
-        window.protocol('WM_DELETE_WINDOW', on_exit)
+        # window.protocol('WM_DELETE_WINDOW', on_exit)
     
         # Add a window title
         # https://pythonguides.com/python-tkinter-title/

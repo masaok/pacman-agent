@@ -14,6 +14,7 @@ class Constants:
 
     # Game-specific constants
     MAX_MOVES = 100
+    TICK_LEN = 10 # in ms
     GHOST_EPSILON = 0.1
 
     # Movement constants + location modifiers
@@ -28,7 +29,7 @@ class Constants:
     PLR_BLOCK = "P"
     DEATH_BLOCK = "D"
     WIN_BLOCK = "W"
-    TIME_BLOCK = "T"
+    TIMEOUT_BLOCK = "T"
     ENTITIES = [WALL_BLOCK, GHOST_BLOCK, PELLET_BLOCK, SAFE_BLOCK, PLR_BLOCK]
     
     # Used to determine whether GPU acceleration is available or not
@@ -39,7 +40,7 @@ class Constants:
     MAZE = ["XXXXXXXXX",
             "X..O...PX",
             "X.......X",
-            "XG.XXXO.X",
+            "X..XXXO.X",
             "XO.....OX",
             "X.......X",
             "XXXXXXXXX"]

@@ -14,10 +14,10 @@ from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 from collections import namedtuple, deque
 from constants import *
+from environment import *
 
-Transition = namedtuple('Transition',
+Episode = namedtuple('Episode',
                         ('state', 'action', 'next_state', 'reward'))
-
 
 class ReplayMemory(object):
     
@@ -29,8 +29,7 @@ class ReplayMemory(object):
         self.memory = deque([],maxlen=capacity)
 
     def push(self, *args):
-        """Save a transition"""
-        self.memory.append(Transition(*args))
+        self.memory.append(Episode(*args))
 
     def sample(self, batch_size):
         return random.sample(self.memory, batch_size)
@@ -53,6 +52,8 @@ class ReplayMemory(object):
         result = []
         for row in maze:
             for cell in row:
+                if not cell in Constants.ENTITIES:
+                    cell = "." # Hack for the environment's mechanics
                 result.append(ReplayMemory.maze_entity_indexes[cell])
         
         return torch.flatten(F.one_hot(torch.tensor(result, dtype=torch.long), num_classes=len(ReplayMemory.maze_entity_indexes))).to(torch.float).to(Constants.DEVICE)
@@ -104,46 +105,13 @@ class PacNet(nn.Module):
         """
         Computes the output of the PacNet for input maze x
         :x: Raw input vector at the first layer of the neural network
-        :returns: Output activations
+        :returns: Output Q(s,a) activations for each a
         """
-        logits = self.linear_relu_stack(x)
-        return logits
+        q_vals = self.linear_relu_stack(x)
+        return q_vals
 
 if __name__ == "__main__":
-    num_episodes = 50
+    num_episodes = 3
     for i_episode in range(num_episodes):
         # Initialize the environment and state
-        env.reset()
-        last_screen = get_screen()
-        current_screen = get_screen()
-        state = current_screen - last_screen
-        for t in count():
-            # Select and perform an action
-            action = select_action(state)
-            _, reward, done, _ = env.step(action.item())
-            reward = torch.tensor([reward], device=device)
-    
-            # Observe new state
-            last_screen = current_screen
-            current_screen = get_screen()
-            if not done:
-                next_state = current_screen - last_screen
-            else:
-                next_state = None
-    
-            # Store the transition in memory
-            memory.push(state, action, next_state, reward)
-    
-            # Move to the next state
-            state = next_state
-    
-            # Perform one step of the optimization (on the policy network)
-            optimize_model()
-            if done:
-                episode_durations.append(t + 1)
-                plot_durations()
-                break
-        # Update the target network, copying all weights and biases in DQN
-        if i_episode % TARGET_UPDATE == 0:
-            target_net.load_state_dict(policy_net.state_dict())
-    
+        Environment.run_game(False, False)

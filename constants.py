@@ -15,6 +15,7 @@ class Constants:
     # Game-specific constants
     MAX_MOVES = 100
     TICK_LEN = 10 # in ms
+    N_SIMS = 1000
     GHOST_EPSILON = 0.1
 
     # Movement constants + location modifiers
@@ -37,6 +38,7 @@ class Constants:
     
     # Training and Maze Generation constants
     PARAM_PATH = "./dat/params.pth" # Determines parameter save location
+    MEM_PATH = "./dat/mem.pkl"
     MAZE = ["XXXXXXXXX",
             "X..O...PX",
             "X.......X",

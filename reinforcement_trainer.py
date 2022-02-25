@@ -9,6 +9,7 @@ import re
 import pandas as pd
 import torch
 import torch.nn.functional as F
+import pickle
 from torch import nn
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
@@ -17,7 +18,7 @@ from constants import *
 from environment import *
 
 Episode = namedtuple('Episode',
-                        ('state', 'action', 'next_state', 'reward'))
+                        ('state', 'action', 'next_state', 'reward', 'is_terminal'))
 
 class ReplayMemory(object):
     
@@ -33,6 +34,16 @@ class ReplayMemory(object):
 
     def sample(self, batch_size):
         return random.sample(self.memory, batch_size)
+    
+    def save (self):
+        mem_file = open(Constants.MEM_PATH, "wb")
+        pickle.dump(self.memory, mem_file)
+        mem_file.close()
+        
+    def load(self):
+        mem_file = open(Constants.MEM_PATH, "rb")
+        self.memory = pickle.load(mem_file)
+        mem_file.close()
 
     def __len__(self):
         return len(self.memory)
@@ -111,7 +122,6 @@ class PacNet(nn.Module):
         return q_vals
 
 if __name__ == "__main__":
-    num_episodes = 3
-    for i_episode in range(num_episodes):
+    for i_episode in range(Constants.N_SIMS):
         # Initialize the environment and state
-        Environment.run_game(False, False)
+        Environment.run_game(debug=False, step=False, gui=False)

@@ -27,7 +27,7 @@ class Environment:
     # Constructor
     ##################################################################
 
-    def __init__(self, maze, window, tick_length=1, verbose=True, debug=True, step=True):
+    def __init__(self, maze, verbose=True, debug=True, step=True, gui=True):
         """
         Initializes the environment from a given maze, specified as an
         array of strings with maze elements
@@ -39,7 +39,7 @@ class Environment:
         self._mp = MazeProblem(maze)
         self._rows = len(maze)
         self._cols = len(maze[0])
-        self._tick_length = tick_length
+        self._tick_length = Constants.TICK_LEN / 1000.0
         self._debug = debug
         self._verbose = verbose
         self._step = step
@@ -71,8 +71,17 @@ class Environment:
         self._last_act = None
 
         # Graphics GUI Stuff (tk)
-        self._window = window
-        self._maze_ui = MazeUI(self._window, self._maze, self._debug)
+        self._gui = gui
+        if gui:
+            window = tk.Tk()
+            # window.protocol('WM_DELETE_WINDOW', on_exit)
+        
+            # Add a window title
+            # https://pythonguides.com/python-tkinter-title/
+            # https://stackoverflow.com/questions/2395431/using-tkinter-in-python-to-edit-the-title-bar
+            window.title("Pacman Reinforcement Learning")
+            self._window = window
+            self._maze_ui = MazeUI(self._window, self._maze, self._debug)
 
     ##################################################################
     # Methods
@@ -94,13 +103,14 @@ class Environment:
                 print(self._player_loc)
             self._insert_block(self._player_loc, Constants.TIMEOUT_BLOCK)
             next_state = copy.deepcopy(self._maze)
-            self._agent.give_transition(state, self._last_act, next_state)
+            self._agent.give_transition(state, self._last_act, next_state, True)
             self._cleanup()
             return
         
         # Draw the Maze first, before any movement
-        self._maze_ui.draw_maze()
-        if self._step:
+        if self._gui:
+            self._maze_ui.draw_maze()
+        if self._step and self._gui:
             # Wait for the button to be pressed to step forward
             self._maze_ui.btn.wait_variable(self._maze_ui.btn_var)
 
@@ -135,7 +145,7 @@ class Environment:
                 print(self._player_loc)
             self._insert_block(self._player_loc, Constants.DEATH_BLOCK)
             next_state = copy.deepcopy(self._maze)
-            self._agent.give_transition(state, next_act, next_state)
+            self._agent.give_transition(state, next_act, next_state, True)
             self._cleanup()
             return
         
@@ -143,7 +153,7 @@ class Environment:
             print("ALL PELLETS EATEN! HUZZAH YOU GLUTTON!  GAME OVER!")
             self._insert_block(self._player_loc, Constants.WIN_BLOCK)
             next_state = copy.deepcopy(self._maze)
-            self._agent.give_transition(state, next_act, next_state)
+            self._agent.give_transition(state, next_act, next_state, True)
             self._cleanup()
             return
 
@@ -160,12 +170,12 @@ class Environment:
                 print(self._player_loc)
             self._insert_block(self._player_loc, Constants.DEATH_BLOCK)
             next_state = copy.deepcopy(self._maze)
-            self._agent.give_transition(state, next_act, next_state)
+            self._agent.give_transition(state, next_act, next_state, True)
             self._cleanup()
             return
 
         next_state = copy.deepcopy(self._maze)
-        self._agent.give_transition(state, next_act, next_state)
+        self._agent.give_transition(state, next_act, next_state, False)
 
         # MazeUI Stuff
 
@@ -173,7 +183,11 @@ class Environment:
             # Wait for the button to be pressed to step forward
             self._window.after(0, self.move)
         else:
-            self._window.after(Constants.TICK_LEN, self.move)
+            if self._gui:
+                self._window.after(Constants.TICK_LEN, self.move)
+            else:
+                time.sleep(self._tick_length)
+                self.move()
 
 
     ##################################################################
@@ -184,7 +198,10 @@ class Environment:
         if not self._step:
             # One more sleep before death if in animation mode
             time.sleep(self._tick_length)
-        self._maze_ui.draw_maze()  # Draw the final maze
+        self._agent.give_terminal()
+        if self._gui:
+            self._maze_ui.draw_maze()  # Draw the final maze
+            self._maze_ui.destroy()
 
     def _get_adjacent(self, loc, offset):
         """
@@ -320,32 +337,26 @@ class Environment:
 
             index += 1
             
-    def run_game (debug, step):
-        window = tk.Tk()
-        # window.protocol('WM_DELETE_WINDOW', on_exit)
-    
-        # Add a window title
-        # https://pythonguides.com/python-tkinter-title/
-        # https://stackoverflow.com/questions/2395431/using-tkinter-in-python-to-edit-the-title-bar
-        window.title("Pacman Reinforcement Learning")
-    
+    def run_game (debug=False, step=False, gui=True):
         # Start the environment
         # Call with tick_length = 0 for instant games
-        running_env = Environment(Constants.MAZE, window, debug=debug, step=step)
+        running_env = Environment(Constants.MAZE, debug=debug, step=step, gui=gui)
     
         # Graphical
         running_env.move()
         print("END MAIN MOVE")
     
-        window.mainloop()
+        if gui:
+            window.mainloop()
         print("END MAIN LOOP")
 
 
 # Exit the Python app cleanly in terminal
 # Credit: https://stackoverflow.com/q/69917376/10415969
 def on_exit():
-    Environment.running_env._maze_ui.window.destroy()  # env window
-    Environment.running_env._maze_ui.btn_var.set("")
+    if not Environment.running_env is None:
+        Environment.running_env._maze_ui.window.destroy()  # env window
+        Environment.running_env._maze_ui.btn_var.set("")
     # exit(0)
 
 if __name__ == "__main__":

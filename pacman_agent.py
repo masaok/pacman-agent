@@ -27,7 +27,8 @@ class PacmanAgent:
     EPS_START = 0.9
     EPS_END = 0.05
     EPS_DECAY = 200
-    TARGET_UPDATE = 10
+    TARGET_UPDATE = 50
+    MEM_SIZE = 10000
 
     def __init__(self, maze):
         """
@@ -39,13 +40,15 @@ class PacmanAgent:
         """
         
         # TODO: What if params don't exist or aren't from the right device?
-        self.memory = ReplayMemory(1000)
+        self.memory = ReplayMemory(PacmanAgent.MEM_SIZE)
         self.pol_net = PacNet(maze).to(Constants.DEVICE)
         self.tar_net = PacNet(maze).to(Constants.DEVICE)
         self.steps = 0
-        if exists(Constants.DEVICE):
+        if exists(Constants.PARAM_PATH):
             self.pol_net.load_state_dict(torch.load(Constants.PARAM_PATH))
-            self.tar_net.load_state_dict(pol_net.state_dict())
+            self.tar_net.load_state_dict(self.pol_net.state_dict())
+        if exists(Constants.MEM_PATH):
+            self.memory.load()
         # self.pol_net.eval()
         self.tar_net.eval()
         self.optimizer = torch.optim.RMSprop(self.pol_net.parameters())
@@ -82,62 +85,51 @@ class PacmanAgent:
         
         return reward
     
-    def give_transition(self, state, action, next_state):
+    def give_transition(self, state, action, next_state, is_terminal):
         reward = torch.tensor([self.get_reward(state, action, next_state)], device=Constants.DEVICE)
         self.memory.push(
             ReplayMemory.vectorize_maze(state), 
             ReplayMemory.vectorize_move(action), 
             ReplayMemory.vectorize_maze(next_state), 
-            reward
+            reward,
+            is_terminal
         )
         self.optimize_model()
         self.steps += 1
         if self.steps % PacmanAgent.TARGET_UPDATE == 0:
             self.tar_net.load_state_dict(self.pol_net.state_dict())
-            torch.save(self.pol_net.state_dict(), Constants.PARAM_PATH)
+    
+    def give_terminal(self):
+        torch.save(self.pol_net.state_dict(), Constants.PARAM_PATH)
+        self.memory.save()
     
     def optimize_model(self):
         if len(self.memory) < PacmanAgent.BATCH_SIZE:
             return
         episodes = self.memory.sample(PacmanAgent.BATCH_SIZE)
-        # Transpose the batch (see https://stackoverflow.com/a/19343/3343043 for
-        # detailed explanation). This converts batch-array of episodes
-        # to Transition of batch-arrays.
-        # batch = Episode(*zip(*episodes))
-    
-        # TODO: Compute a mask of non-final states and concatenate the batch elements
-        # (a final state would've been the one after which simulation ended)
     
         # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
         # columns of actions taken. These are the actions which would've been taken
         # for each batch state according to self.pol_net
         state_action_values = torch.zeros(len(Constants.MOVES), device=Constants.DEVICE)
+        target_action_values = torch.zeros(len(Constants.MOVES), device=Constants.DEVICE)
         action_indexes = torch.tensor([e.action.tolist().index(1) for e in episodes])
         for e in episodes:
             action = e.action.tolist()
             action_index = action.index(1)
-            state_action_values[action_index] += self.pol_net(e.state)[action_index]
-        # state_action_values = [self.pol_net(e.state).mask_select(0, e.action.to(torch.int64)) for e in episodes]
-        print("Q(s,a): ", state_action_values)
-        for e in episodes:
-            print(self.tar_net(e.next_state))
-            print(self.tar_net(e.next_state).max(0)[0])
-        next_state_action_values = torch.tensor([self.tar_net(e.next_state).max(0)[0] for e in episodes], device=Constants.DEVICE)
-        print("Q(s',a'): ", next_state_action_values)
-        rewards = torch.tensor([e.reward for e in episodes], device=Constants.DEVICE)
-        print("R: ", rewards)
-    
-        # Compute V(s_{t+1}) for all next states.
-        # Expected values of actions for non_final_next_states are computed based
-        # on the "older" self.tar_net; selecting their best reward with max(1)[0].
-        # This is merged based on the mask, such that we'll have either the expected
-        # state value or 0 in case the state was final.
-        expected_state_action_values = (next_state_action_values * PacmanAgent.GAMMA) + rewards
-        print("Target: ", expected_state_action_values)
+            state_action_value = self.pol_net(e.state)[action_index]
+            next_state_action_value = 0 if e.is_terminal else self.tar_net(e.next_state).max(0)[0]
+            target_action_value = (next_state_action_value * PacmanAgent.GAMMA) + e.reward
+            state_action_values[action_index] += state_action_value
+            target_action_values[action_index] += target_action_value[0]
+            
+        # TODO: Need to account for terminal states
     
         # Compute Huber loss
         criterion = nn.SmoothL1Loss()
-        loss = criterion(state_action_values, expected_state_action_values)
+        print("Q(s,a)= ", state_action_values)
+        print("Target= ", target_action_values)
+        loss = criterion(state_action_values, target_action_values)
     
         # Optimize the model
         self.optimizer.zero_grad()
@@ -145,3 +137,4 @@ class PacmanAgent:
         for param in self.pol_net.parameters():
             param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
+        print(len(self.memory))

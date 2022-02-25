@@ -112,12 +112,16 @@ class PacmanAgent:
         # columns of actions taken. These are the actions which would've been taken
         # for each batch state according to self.pol_net
         state_action_values = torch.zeros(len(Constants.MOVES), device=Constants.DEVICE)
+        action_indexes = torch.tensor([e.action.tolist().index(1) for e in episodes])
         for e in episodes:
             action = e.action.tolist()
             action_index = action.index(1)
             state_action_values[action_index] += self.pol_net(e.state)[action_index]
         # state_action_values = [self.pol_net(e.state).mask_select(0, e.action.to(torch.int64)) for e in episodes]
         print("Q(s,a): ", state_action_values)
+        for e in episodes:
+            print(self.tar_net(e.next_state))
+            print(self.tar_net(e.next_state).max(0)[0])
         next_state_action_values = torch.tensor([self.tar_net(e.next_state).max(0)[0] for e in episodes], device=Constants.DEVICE)
         print("Q(s',a'): ", next_state_action_values)
         rewards = torch.tensor([e.reward for e in episodes], device=Constants.DEVICE)

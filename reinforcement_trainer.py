@@ -10,6 +10,8 @@ import pandas as pd
 import torch
 import torch.nn.functional as F
 import pickle
+import matplotlib
+import matplotlib.pyplot as plt
 from torch import nn
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
@@ -108,11 +110,11 @@ class PacNet(nn.Module):
         self.maze_vec_dims = rows * cols * entities
         self.linear_relu_stack = nn.Sequential(
 #             nn.Linear(self.maze_vec_dims * 2, 256),
-            nn.Linear(self.maze_vec_dims, 256),
+            nn.Linear(self.maze_vec_dims, self.maze_vec_dims),
             nn.ReLU(),
-            nn.Linear(256, 128),
+            nn.Linear(self.maze_vec_dims, self.maze_vec_dims),
             nn.ReLU(),
-            nn.Linear(128, moves),
+            nn.Linear(self.maze_vec_dims, moves),
         )
 
     def forward(self, x):
@@ -125,15 +127,30 @@ class PacNet(nn.Module):
         return q_vals
 
 if __name__ == "__main__":
-    wins = deque([], 20)
-    moves = deque([], 20)
+    win_ema = 0
+    move_ema = 0
+    ema_alpha = 0.1
+    plot_wins = []
+    plot_moves = []
     for i_episode in range(Constants.N_SIMS):
         print("==============================")
         print("Iteration " + str(i_episode))
         print("==============================")
         # Initialize the environment and state
         outcome = Environment.run_game(debug=False, step=False, gui=False)
-        wins.append(outcome["win"])
-        moves.append(outcome["moves"])
-        print("  > Win Average: ", mean(wins))
-        print("  > Moves Average: ", mean(moves))
+        print("  [M] Moves: ", outcome["moves"])
+        win_ema = (1-ema_alpha) * win_ema + (ema_alpha) * outcome["win"]
+        move_ema = (1-ema_alpha) * move_ema + (ema_alpha) * (outcome["moves"] / Constants.MAX_MOVES)
+        print("  > Win Average: ", win_ema)
+        print("  > Moves Average: ", move_ema)
+        plot_wins.append(win_ema)
+        plot_moves.append(move_ema)
+    
+    plt.figure(1)
+    plt.clf()
+    plt.title("Test")
+    plt.xlabel("Episode")
+    plt.plot(plot_wins)
+    plt.plot(plot_moves)
+    plt.ioff()
+    plt.show()

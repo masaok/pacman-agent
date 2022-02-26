@@ -21,14 +21,14 @@ class PacmanAgent:
     module.
     '''
 
-    BATCH_SIZE = 32
+    BATCH_SIZE = 64
     GAMMA = 0.999
     EPS_GREEDY = 0.1
     EPS_START = 0.9
     EPS_END = 0.05
     EPS_DECAY = 200
     TARGET_UPDATE = 50
-    MEM_SIZE = 10000
+    MEM_SIZE = 1000
 
     def __init__(self, maze):
         """
@@ -141,7 +141,7 @@ class PacmanAgent:
         loss = criterion(state_action_values, target_action_values)
     
         # Optimize the model
-#         self.optimizer.zero_grad()
+        self.optimizer.zero_grad()
         loss.backward()
 #         for param in self.pol_net.parameters():
 #             param.grad.data.clamp_(-1, 1)

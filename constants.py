@@ -13,8 +13,8 @@ import torch
 class Constants:
 
     # Game-specific constants
-    MAX_MOVES = 100
-    TICK_LEN = 10 # in ms
+    MAX_MOVES = 200
+    TICK_LEN = 0 # in ms
     N_SIMS = 1000
     GHOST_EPSILON = 0.1
 

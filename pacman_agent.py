@@ -44,6 +44,7 @@ class PacmanAgent:
         self.pol_net = PacNet(maze).to(Constants.DEVICE)
         self.tar_net = PacNet(maze).to(Constants.DEVICE)
         self.steps = 0
+        self.prev_state = torch.zeros(self.pol_net.maze_vec_dims, device=Constants.DEVICE)
         if exists(Constants.PARAM_PATH):
             self.pol_net.load_state_dict(torch.load(Constants.PARAM_PATH))
             self.tar_net.load_state_dict(self.pol_net.state_dict())
@@ -61,34 +62,39 @@ class PacmanAgent:
         :legal_actions: Map of legal actions to their next agent states
         :return: Action choice from the set of legal_actions
         """
+        legal_actions = dict(legal_actions)
         if random.random() < PacmanAgent.EPS_GREEDY:
-            return random.choice(Constants.MOVES)
-        maze_vectorized = ReplayMemory.vectorize_maze(perception)
+            return random.choice(list(legal_actions.keys()))
+        curr_state = ReplayMemory.vectorize_maze(perception)
+#         maze_vectorized = torch.cat((self.prev_state, curr_state), 0)
+        maze_vectorized = curr_state
         move_probs = list(self.pol_net(maze_vectorized))
         move_probs = {move: move_probs[moveIdx] for moveIdx, move in enumerate(Constants.MOVES)}
         move_probs = {move: prob for (move, prob) in move_probs.items() if move in {s[0] for s in legal_actions}}
-        return max(move_probs, key=move_probs.get) if len(move_probs) > 0 else random.choice(legal_actions.keys())
+        return max(move_probs, key=move_probs.get) if len(move_probs) > 0 else random.choice(list(legal_actions.keys()))
     
     def get_reward(self, state, action, next_state):
         last_maze = MazeProblem(state)
         curr_maze = MazeProblem(next_state)
-        reward = -0.01
+        reward = -0.1
         
         if len(curr_maze.get_pellets()) < len(last_maze.get_pellets()):
             reward += 1
         
-        if not curr_maze.get_win_state() == None:
-            reward += 1
+        if not curr_maze.get_win_state() is None:
+            reward += 10
             
-        if not curr_maze.get_death_state() == None:
+        if not curr_maze.get_death_state() is None:
             reward -= 10
         
         return reward
     
     def give_transition(self, state, action, next_state, is_terminal):
         reward = torch.tensor([self.get_reward(state, action, next_state)], device=Constants.DEVICE)
+        state_vec = ReplayMemory.vectorize_maze(state)
         self.memory.push(
-            ReplayMemory.vectorize_maze(state), 
+            self.prev_state,
+            state_vec,
             ReplayMemory.vectorize_move(action), 
             ReplayMemory.vectorize_maze(next_state), 
             reward,
@@ -98,6 +104,7 @@ class PacmanAgent:
         self.steps += 1
         if self.steps % PacmanAgent.TARGET_UPDATE == 0:
             self.tar_net.load_state_dict(self.pol_net.state_dict())
+        self.prev_state = state_vec
     
     def give_terminal(self):
         torch.save(self.pol_net.state_dict(), Constants.PARAM_PATH)
@@ -117,24 +124,25 @@ class PacmanAgent:
         for e in episodes:
             action = e.action.tolist()
             action_index = action.index(1)
+#             state_action_value = self.pol_net(torch.cat((e.prev_state, e.state), 0))[action_index]
             state_action_value = self.pol_net(e.state)[action_index]
             next_state_action_value = 0 if e.is_terminal else self.tar_net(e.next_state).max(0)[0]
+#             next_state_action_value = 0 if e.is_terminal else self.tar_net(torch.cat((e.state, e.next_state), 0)).max(0)[0]
+#             next_state_action_value = self.tar_net(torch.cat((e.state, e.next_state), 0)).max(0)[0]
+#             next_state_action_value = self.tar_net(torch.cat((e.state, e.next_state), 0)).max(0)[0]
             target_action_value = (next_state_action_value * PacmanAgent.GAMMA) + e.reward
             state_action_values[action_index] += state_action_value
             target_action_values[action_index] += target_action_value[0]
             
-        # TODO: Need to account for terminal states
-    
         # Compute Huber loss
         criterion = nn.SmoothL1Loss()
-        print("Q(s,a)= ", state_action_values)
-        print("Target= ", target_action_values)
+#         print("Q(s,a)= ", state_action_values)
+#         print("Target= ", target_action_values)
         loss = criterion(state_action_values, target_action_values)
     
         # Optimize the model
-        self.optimizer.zero_grad()
+#         self.optimizer.zero_grad()
         loss.backward()
-        for param in self.pol_net.parameters():
-            param.grad.data.clamp_(-1, 1)
+#         for param in self.pol_net.parameters():
+#             param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
-        print(len(self.memory))

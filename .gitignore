@@ -3,3 +3,4 @@ env
 .pydevproject
 .project
 __pycache__
+*.pkl

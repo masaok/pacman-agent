@@ -16,9 +16,10 @@ from torch.utils.data import Dataset
 from collections import namedtuple, deque
 from constants import *
 from environment import *
+from statistics import *
 
 Episode = namedtuple('Episode',
-                        ('state', 'action', 'next_state', 'reward', 'is_terminal'))
+                        ('prev_state', 'state', 'action', 'next_state', 'reward', 'is_terminal'))
 
 class ReplayMemory(object):
     
@@ -104,8 +105,10 @@ class PacNet(nn.Module):
         cols = len(maze[0])
         entities = len(Constants.ENTITIES)
         moves = len(Constants.MOVES)
+        self.maze_vec_dims = rows * cols * entities
         self.linear_relu_stack = nn.Sequential(
-            nn.Linear(rows * cols * entities, 256),
+#             nn.Linear(self.maze_vec_dims * 2, 256),
+            nn.Linear(self.maze_vec_dims, 256),
             nn.ReLU(),
             nn.Linear(256, 128),
             nn.ReLU(),
@@ -122,6 +125,15 @@ class PacNet(nn.Module):
         return q_vals
 
 if __name__ == "__main__":
+    wins = deque([], 20)
+    moves = deque([], 20)
     for i_episode in range(Constants.N_SIMS):
+        print("==============================")
+        print("Iteration " + str(i_episode))
+        print("==============================")
         # Initialize the environment and state
-        Environment.run_game(debug=False, step=False, gui=False)
+        outcome = Environment.run_game(debug=False, step=False, gui=False)
+        wins.append(outcome["win"])
+        moves.append(outcome["moves"])
+        print("  > Win Average: ", mean(wins))
+        print("  > Moves Average: ", mean(moves))

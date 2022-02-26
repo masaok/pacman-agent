@@ -27,7 +27,7 @@ class Environment:
     # Constructor
     ##################################################################
 
-    def __init__(self, maze, verbose=True, debug=True, step=True, gui=True):
+    def __init__(self, maze, verbose=False, debug=False, step=False, gui=True):
         """
         Initializes the environment from a given maze, specified as an
         array of strings with maze elements
@@ -82,6 +82,8 @@ class Environment:
             window.title("Pacman Reinforcement Learning")
             self._window = window
             self._maze_ui = MazeUI(self._window, self._maze, self._debug)
+        
+        self.outcome = {"moves": self._moves, "win": False}
 
     ##################################################################
     # Methods
@@ -139,6 +141,7 @@ class Environment:
                 "\nMoves: " + str(self._moves) + " / " + str(Constants.MAX_MOVES) +
                 "\n")
 
+        # Terminal State Checks
         if self._ghost_test(self._player_loc):
             print("PACMAN MOVED AND HIT A GHOST!  GAME OVER!")
             if self._debug:
@@ -154,6 +157,7 @@ class Environment:
             self._insert_block(self._player_loc, Constants.WIN_BLOCK)
             next_state = copy.deepcopy(self._maze)
             self._agent.give_transition(state, next_act, next_state, True)
+            self.outcome["win"] = True
             self._cleanup()
             return
 
@@ -161,9 +165,12 @@ class Environment:
             print("GHOSTS MOVING ...")
             print(self._ghosts)
 
+        # Ghost Move Turn
         self._move_ghosts()
-        self._display()
-        print("\n")
+        if self._verbose:
+            self._display()
+            print("\n")
+            
         if self._ghost_test(self._player_loc):
             print("GHOSTS MOVED AND HIT PACMAN!  GAME OVER!")
             if self._debug:
@@ -198,6 +205,7 @@ class Environment:
         if not self._step:
             # One more sleep before death if in animation mode
             time.sleep(self._tick_length)
+        self.outcome["moves"] = self._moves
         self._agent.give_terminal()
         if self._gui:
             self._maze_ui.draw_maze()  # Draw the final maze
@@ -245,11 +253,12 @@ class Environment:
 
     def _move_request(self, move):
         old_loc = self._player_loc
-        print("old_loc:", old_loc)
 
         new_loc = old_loc if move == None else tuple(
             sum(x) for x in zip(self._player_loc, Constants.MOVE_DIRS[move]))
-        print("new_loc:", new_loc)
+        if self._verbose:
+            print("old_loc:", old_loc)
+            print("new_loc:", new_loc)
 
         # If you hit a wall, move back and do nothing
         if self._wall_test(new_loc):
@@ -337,18 +346,20 @@ class Environment:
 
             index += 1
             
-    def run_game (debug=False, step=False, gui=True):
+    def run_game (verbose=False, debug=False, step=False, gui=True):
         # Start the environment
         # Call with tick_length = 0 for instant games
-        running_env = Environment(Constants.MAZE, debug=debug, step=step, gui=gui)
+        Environment.running_env = Environment(Constants.MAZE, verbose=verbose, debug=debug, step=step, gui=gui)
     
         # Graphical
-        running_env.move()
+        Environment.running_env.move()
         print("END MAIN MOVE")
     
         if gui:
             window.mainloop()
+        
         print("END MAIN LOOP")
+        return Environment.running_env.outcome
 
 
 # Exit the Python app cleanly in terminal

@@ -15,7 +15,7 @@ class Constants:
     # Game-specific constants
     MAX_MOVES = 200
     TICK_LEN = 0 # in ms
-    N_SIMS = 1000
+    N_SIMS = 500
     GHOST_EPSILON = 0.1
 
     # Movement constants + location modifiers
@@ -31,7 +31,8 @@ class Constants:
     DEATH_BLOCK = "D"
     WIN_BLOCK = "W"
     TIMEOUT_BLOCK = "T"
-    ENTITIES = [WALL_BLOCK, GHOST_BLOCK, PELLET_BLOCK, SAFE_BLOCK, PLR_BLOCK]
+    # ENTITIES = [WALL_BLOCK, GHOST_BLOCK, PELLET_BLOCK, SAFE_BLOCK, PLR_BLOCK]
+    ENTITIES = [WALL_BLOCK, PELLET_BLOCK, SAFE_BLOCK, PLR_BLOCK]
     
     # Used to determine whether GPU acceleration is available or not
     DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'

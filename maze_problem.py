@@ -28,6 +28,7 @@ class MazeProblem:
         self._ghosts = set()
         self._pellets = set()
         self._walls = set()
+        self._open = set()
         self._death_state = None
         self._win_state = None
         self._timeout_state = None
@@ -41,6 +42,8 @@ class MazeProblem:
                     self._ghosts.add((col_num, row_num))
                 if cell == Constants.PELLET_BLOCK:
                     self._pellets.add((col_num, row_num))
+                if cell == Constants.SAFE_BLOCK:
+                    self._open.add((col_num, row_num))
                 if cell == Constants.PLR_BLOCK:
                     self._player_loc = self._initial_loc = (col_num, row_num)
                 if cell == Constants.DEATH_BLOCK:
@@ -73,6 +76,12 @@ class MazeProblem:
         Returns a set containing the locations of all walls in the maze
         """
         return copy.deepcopy(self._walls)
+    
+    def get_open(self):
+        """
+        Returns a set containing the locations of all walls in the maze
+        """
+        return copy.deepcopy(self._open)
     
     def get_win_state(self):
         """

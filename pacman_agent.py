@@ -27,7 +27,7 @@ class PacmanAgent:
     EPS_START = 0.9
     EPS_END = 0.05
     EPS_DECAY = 200
-    TARGET_UPDATE = 50
+    TARGET_UPDATE = 20
     MEM_SIZE = 1000
 
     def __init__(self, maze):
@@ -66,8 +66,8 @@ class PacmanAgent:
         if random.random() < PacmanAgent.EPS_GREEDY:
             return random.choice(list(legal_actions.keys()))
         curr_state = ReplayMemory.vectorize_maze(perception)
-#         maze_vectorized = torch.cat((self.prev_state, curr_state), 0)
-        maze_vectorized = curr_state
+        maze_vectorized = torch.cat((self.prev_state, curr_state), 0)
+        # maze_vectorized = curr_state
         move_probs = list(self.pol_net(maze_vectorized))
         move_probs = {move: move_probs[moveIdx] for moveIdx, move in enumerate(Constants.MOVES)}
         move_probs = {move: prob for (move, prob) in move_probs.items() if move in {s[0] for s in legal_actions}}
@@ -124,10 +124,10 @@ class PacmanAgent:
         for e in episodes:
             action = e.action.tolist()
             action_index = action.index(1)
-#             state_action_value = self.pol_net(torch.cat((e.prev_state, e.state), 0))[action_index]
-            state_action_value = self.pol_net(e.state)[action_index]
-            next_state_action_value = 0 if e.is_terminal else self.tar_net(e.next_state).max(0)[0]
-#             next_state_action_value = 0 if e.is_terminal else self.tar_net(torch.cat((e.state, e.next_state), 0)).max(0)[0]
+            # state_action_value = self.pol_net(e.state)[action_index]
+            state_action_value = self.pol_net(torch.cat((e.prev_state, e.state), 0))[action_index]
+            # next_state_action_value = 0 if e.is_terminal else self.tar_net(e.next_state).max(0)[0]
+            next_state_action_value = 0 if e.is_terminal else self.tar_net(torch.cat((e.state, e.next_state), 0)).max(0)[0]
 #             next_state_action_value = self.tar_net(torch.cat((e.state, e.next_state), 0)).max(0)[0]
 #             next_state_action_value = self.tar_net(torch.cat((e.state, e.next_state), 0)).max(0)[0]
             target_action_value = (next_state_action_value * PacmanAgent.GAMMA) + e.reward
@@ -143,6 +143,6 @@ class PacmanAgent:
         # Optimize the model
         self.optimizer.zero_grad()
         loss.backward()
-#         for param in self.pol_net.parameters():
-#             param.grad.data.clamp_(-1, 1)
+        for param in self.pol_net.parameters():
+            param.grad.data.clamp_(-1, 1)
         self.optimizer.step()

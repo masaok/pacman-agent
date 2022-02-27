@@ -6,8 +6,8 @@ import copy
 import time
 
 import tkinter as tk
+import random
 from tkinter import *
-
 from constants import Constants
 from ghost_agent import GhostAgent
 from pacman_agent import PacmanAgent
@@ -36,6 +36,8 @@ class Environment:
         :verbose: Whether or not the maze updates will be printed
         """
         self._maze = maze
+        # Easier to change elements in this format
+        self._maze = [list(row) for row in maze]
         self._mp = MazeProblem(maze)
         self._rows = len(maze)
         self._cols = len(maze[0])
@@ -49,7 +51,12 @@ class Environment:
         self._ghosts = self._mp.get_ghosts()
         self._pellets = self._mp.get_pellets()
         self._walls = self._mp.get_walls()
+        self._open = self._mp.get_open()
         self._player_loc = self._initial_loc = self._mp.get_player_loc()
+        
+        # Random start state behavior
+        # self._player_loc = random.choice(list(self._open))
+        
 
         # Score keeping
         self._pellets_eaten = 0
@@ -58,8 +65,6 @@ class Environment:
 
         # Initialize the MazeAgent and ready simulation!
         self._goal_reached = False
-        # Easier to change elements in this format
-        self._maze = [list(row) for row in maze]
 
         # Keep a copy of the original maze
         self._og_maze = copy.deepcopy(self._maze)
@@ -83,7 +88,7 @@ class Environment:
             self._window = window
             self._maze_ui = MazeUI(self._window, self._maze, self._debug)
         
-        self.outcome = {"moves": self._moves, "win": False}
+        self.outcome = {"moves": self._moves, "win": False, "pellets": 0, "max_pellets": self._n_pellets}
 
     ##################################################################
     # Methods
@@ -205,6 +210,7 @@ class Environment:
         if not self._step:
             # One more sleep before death if in animation mode
             time.sleep(self._tick_length)
+        self.outcome["pellets"] = self._pellets_eaten
         self.outcome["moves"] = self._moves
         self._agent.give_terminal()
         if self._gui:
@@ -356,7 +362,7 @@ class Environment:
         print("END MAIN MOVE")
     
         if gui:
-            window.mainloop()
+            Environment.running_env._window.mainloop()
         
         print("END MAIN LOOP")
         return Environment.running_env.outcome

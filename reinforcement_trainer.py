@@ -109,12 +109,14 @@ class PacNet(nn.Module):
         moves = len(Constants.MOVES)
         self.maze_vec_dims = rows * cols * entities
         self.linear_relu_stack = nn.Sequential(
-#             nn.Linear(self.maze_vec_dims * 2, 256),
-            nn.Linear(self.maze_vec_dims, self.maze_vec_dims),
+            nn.Linear(self.maze_vec_dims * 2, 128),
+            # nn.Linear(self.maze_vec_dims, self.maze_vec_dims),
             nn.ReLU(),
-            nn.Linear(self.maze_vec_dims, self.maze_vec_dims),
+            nn.Linear(128, 64),
             nn.ReLU(),
-            nn.Linear(self.maze_vec_dims, moves),
+            nn.Linear(64, 32),
+            nn.ReLU(),
+            nn.Linear(32, moves),
         )
 
     def forward(self, x):
@@ -129,28 +131,35 @@ class PacNet(nn.Module):
 if __name__ == "__main__":
     win_ema = 0
     move_ema = 0
+    pell_ema = 0
     ema_alpha = 0.1
     plot_wins = []
     plot_moves = []
+    plot_pells = []
     for i_episode in range(Constants.N_SIMS):
         print("==============================")
         print("Iteration " + str(i_episode))
         print("==============================")
         # Initialize the environment and state
         outcome = Environment.run_game(debug=False, step=False, gui=False)
-        print("  [M] Moves: ", outcome["moves"])
         win_ema = (1-ema_alpha) * win_ema + (ema_alpha) * outcome["win"]
         move_ema = (1-ema_alpha) * move_ema + (ema_alpha) * (outcome["moves"] / Constants.MAX_MOVES)
+        pell_ema = (1-ema_alpha) * pell_ema + (ema_alpha) * (outcome["pellets"] / outcome["max_pellets"])
+        print("  [M] Moves: ", outcome["moves"])
+        print("  [P] Pellets: ", outcome["pellets"], pell_ema)
         print("  > Win Average: ", win_ema)
         print("  > Moves Average: ", move_ema)
         plot_wins.append(win_ema)
         plot_moves.append(move_ema)
+        plot_pells.append(pell_ema)
     
     plt.figure(1)
     plt.clf()
     plt.title("Test")
     plt.xlabel("Episode")
-    plt.plot(plot_wins)
-    plt.plot(plot_moves)
+    plt.plot(plot_wins, label="Win %")
+    plt.plot(plot_moves, label="Max Move %")
+    plt.plot(plot_pells, label="Pellet %")
+    plt.legend(["Win %", "Max Move %", "Pellet %"])
     plt.ioff()
     plt.show()

@@ -109,14 +109,14 @@ class PacNet(nn.Module):
         moves = len(Constants.MOVES)
         self.maze_vec_dims = rows * cols * entities
         self.linear_relu_stack = nn.Sequential(
-            nn.Linear(self.maze_vec_dims * 2, 128),
-            # nn.Linear(self.maze_vec_dims, self.maze_vec_dims),
+#             nn.Linear(self.maze_vec_dims * 2, 128),
+            nn.Linear(self.maze_vec_dims, self.maze_vec_dims),
             nn.ReLU(),
-            nn.Linear(128, 64),
+            nn.Linear(self.maze_vec_dims, self.maze_vec_dims),
             nn.ReLU(),
-            nn.Linear(64, 32),
+            nn.Linear(self.maze_vec_dims, self.maze_vec_dims),
             nn.ReLU(),
-            nn.Linear(32, moves),
+            nn.Linear(self.maze_vec_dims, moves),
         )
 
     def forward(self, x):

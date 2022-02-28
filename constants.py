@@ -15,7 +15,7 @@ class Constants:
     # Game-specific constants
     MAX_MOVES = 200
     TICK_LEN = 0 # in ms
-    N_SIMS = 500
+    N_SIMS = 5000
     GHOST_EPSILON = 0.1
 
     # Movement constants + location modifiers

@@ -66,8 +66,8 @@ class PacmanAgent:
         if random.random() < PacmanAgent.EPS_GREEDY:
             return random.choice(list(legal_actions.keys()))
         curr_state = ReplayMemory.vectorize_maze(perception)
-        maze_vectorized = torch.cat((self.prev_state, curr_state), 0)
-        # maze_vectorized = curr_state
+#         maze_vectorized = torch.cat((self.prev_state, curr_state), 0)
+        maze_vectorized = curr_state
         move_probs = list(self.pol_net(maze_vectorized))
         move_probs = {move: move_probs[moveIdx] for moveIdx, move in enumerate(Constants.MOVES)}
         move_probs = {move: prob for (move, prob) in move_probs.items() if move in {s[0] for s in legal_actions}}
@@ -90,16 +90,19 @@ class PacmanAgent:
         return reward
     
     def give_transition(self, state, action, next_state, is_terminal):
-        reward = torch.tensor([self.get_reward(state, action, next_state)], device=Constants.DEVICE)
+        reward_val = self.get_reward(state, action, next_state)
+        reward = torch.tensor([reward_val], device=Constants.DEVICE)
         state_vec = ReplayMemory.vectorize_maze(state)
-        self.memory.push(
-            self.prev_state,
-            state_vec,
-            ReplayMemory.vectorize_move(action), 
-            ReplayMemory.vectorize_maze(next_state), 
-            reward,
-            is_terminal
-        )
+        mem_weight = 1 if reward_val < 0 else 10
+        for m in range(mem_weight):
+            self.memory.push(
+                self.prev_state,
+                state_vec,
+                ReplayMemory.vectorize_move(action), 
+                ReplayMemory.vectorize_maze(next_state), 
+                reward,
+                is_terminal
+            )
         self.optimize_model()
         self.steps += 1
         if self.steps % PacmanAgent.TARGET_UPDATE == 0:
@@ -124,10 +127,10 @@ class PacmanAgent:
         for e in episodes:
             action = e.action.tolist()
             action_index = action.index(1)
-            # state_action_value = self.pol_net(e.state)[action_index]
-            state_action_value = self.pol_net(torch.cat((e.prev_state, e.state), 0))[action_index]
-            # next_state_action_value = 0 if e.is_terminal else self.tar_net(e.next_state).max(0)[0]
-            next_state_action_value = 0 if e.is_terminal else self.tar_net(torch.cat((e.state, e.next_state), 0)).max(0)[0]
+            state_action_value = self.pol_net(e.state)[action_index]
+#             state_action_value = self.pol_net(torch.cat((e.prev_state, e.state), 0))[action_index]
+            next_state_action_value = 0 if e.is_terminal else self.tar_net(e.next_state).max(0)[0]
+#             next_state_action_value = 0 if e.is_terminal else self.tar_net(torch.cat((e.state, e.next_state), 0)).max(0)[0]
 #             next_state_action_value = self.tar_net(torch.cat((e.state, e.next_state), 0)).max(0)[0]
 #             next_state_action_value = self.tar_net(torch.cat((e.state, e.next_state), 0)).max(0)[0]
             target_action_value = (next_state_action_value * PacmanAgent.GAMMA) + e.reward

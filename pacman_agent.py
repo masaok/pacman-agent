@@ -21,14 +21,14 @@ class PacmanAgent:
     module.
     '''
 
-    BATCH_SIZE = 64
-    GAMMA = 0.999
+    BATCH_SIZE = 32
+    GAMMA = 0.95
     EPS_GREEDY = 0.1
     EPS_START = 0.9
     EPS_END = 0.05
     EPS_DECAY = 200
-    TARGET_UPDATE = 20
-    MEM_SIZE = 1000
+    TARGET_UPDATE = 100
+    MEM_SIZE = 10000
 
     def __init__(self, maze):
         """
@@ -44,7 +44,7 @@ class PacmanAgent:
         self.pol_net = PacNet(maze).to(Constants.DEVICE)
         self.tar_net = PacNet(maze).to(Constants.DEVICE)
         self.steps = 0
-        self.prev_state = torch.zeros(self.pol_net.maze_vec_dims, device=Constants.DEVICE)
+#         self.prev_state = torch.zeros(self.pol_net.maze_vec_dims, device=Constants.DEVICE)
         if exists(Constants.PARAM_PATH):
             self.pol_net.load_state_dict(torch.load(Constants.PARAM_PATH))
             self.tar_net.load_state_dict(self.pol_net.state_dict())
@@ -53,6 +53,7 @@ class PacmanAgent:
         # self.pol_net.eval()
         self.tar_net.eval()
         self.optimizer = torch.optim.RMSprop(self.pol_net.parameters())
+#         self.optimizer = torch.optim.RMSprop(self.pol_net.parameters(), lr=0.00025, alpha=0.95, eps=0.01)
 
     def choose_action(self, perception, legal_actions):
         """
@@ -67,8 +68,8 @@ class PacmanAgent:
             return random.choice(list(legal_actions.keys()))
         curr_state = ReplayMemory.vectorize_maze(perception)
 #         maze_vectorized = torch.cat((self.prev_state, curr_state), 0)
-        maze_vectorized = curr_state
-        move_probs = list(self.pol_net(maze_vectorized))
+        maze_vectorized = torch.from_numpy(np.stack(curr_state)).unsqueeze(0).to(torch.float).to(Constants.DEVICE)
+        move_probs = self.pol_net(maze_vectorized)[0].tolist()
         move_probs = {move: move_probs[moveIdx] for moveIdx, move in enumerate(Constants.MOVES)}
         move_probs = {move: prob for (move, prob) in move_probs.items() if move in {s[0] for s in legal_actions}}
         return max(move_probs, key=move_probs.get) if len(move_probs) > 0 else random.choice(list(legal_actions.keys()))
@@ -79,13 +80,13 @@ class PacmanAgent:
         reward = -0.1
         
         if len(curr_maze.get_pellets()) < len(last_maze.get_pellets()):
-            reward += 1
+            reward += 10
         
         if not curr_maze.get_win_state() is None:
-            reward += 10
+            reward += 100
             
         if not curr_maze.get_death_state() is None:
-            reward -= 10
+            reward -= 100
         
         return reward
     
@@ -96,10 +97,10 @@ class PacmanAgent:
         mem_weight = 1 if reward_val < 0 else 10
         for m in range(mem_weight):
             self.memory.push(
-                self.prev_state,
+#                 self.prev_state,
                 state_vec,
-                ReplayMemory.vectorize_move(action), 
-                ReplayMemory.vectorize_maze(next_state), 
+                ReplayMemory.vectorize_move(action),
+                ReplayMemory.vectorize_maze(next_state),
                 reward,
                 is_terminal
             )
@@ -107,7 +108,7 @@ class PacmanAgent:
         self.steps += 1
         if self.steps % PacmanAgent.TARGET_UPDATE == 0:
             self.tar_net.load_state_dict(self.pol_net.state_dict())
-        self.prev_state = state_vec
+#         self.prev_state = state_vec
     
     def give_terminal(self):
         torch.save(self.pol_net.state_dict(), Constants.PARAM_PATH)
@@ -117,31 +118,49 @@ class PacmanAgent:
         if len(self.memory) < PacmanAgent.BATCH_SIZE:
             return
         episodes = self.memory.sample(PacmanAgent.BATCH_SIZE)
+        batch_s, batch_a, batch_n, batch_r, batch_t = zip(*episodes)
+        
+        batch_s = torch.from_numpy(np.stack(batch_s)).to(torch.float).to(Constants.DEVICE)
+        batch_r = torch.DoubleTensor(batch_r).unsqueeze(1).to(Constants.DEVICE)
+        batch_a = torch.LongTensor(list(map(ReplayMemory.move_vec_to_index, batch_a))).unsqueeze(1).to(Constants.DEVICE)
+        batch_n = torch.from_numpy(np.stack(batch_n)).to(torch.float).to(Constants.DEVICE)
+        batch_t = torch.ByteTensor(batch_t).unsqueeze(1).to(Constants.DEVICE)
     
         # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
         # columns of actions taken. These are the actions which would've been taken
         # for each batch state according to self.pol_net
-        state_action_values = torch.zeros(len(Constants.MOVES), device=Constants.DEVICE)
-        target_action_values = torch.zeros(len(Constants.MOVES), device=Constants.DEVICE)
-        action_indexes = torch.tensor([e.action.tolist().index(1) for e in episodes])
-        for e in episodes:
-            action = e.action.tolist()
-            action_index = action.index(1)
-            state_action_value = self.pol_net(e.state)[action_index]
-#             state_action_value = self.pol_net(torch.cat((e.prev_state, e.state), 0))[action_index]
-            next_state_action_value = 0 if e.is_terminal else self.tar_net(e.next_state).max(0)[0]
-#             next_state_action_value = 0 if e.is_terminal else self.tar_net(torch.cat((e.state, e.next_state), 0)).max(0)[0]
-#             next_state_action_value = self.tar_net(torch.cat((e.state, e.next_state), 0)).max(0)[0]
-#             next_state_action_value = self.tar_net(torch.cat((e.state, e.next_state), 0)).max(0)[0]
-            target_action_value = (next_state_action_value * PacmanAgent.GAMMA) + e.reward
-            state_action_values[action_index] += state_action_value
-            target_action_values[action_index] += target_action_value[0]
-            
+#         state_action_values = torch.zeros(len(Constants.MOVES), device=Constants.DEVICE)
+#         target_action_values = torch.zeros(len(Constants.MOVES), device=Constants.DEVICE)
+#         action_indexes = torch.tensor([e.action.tolist().index(1) for e in episodes])
+#         av_inspect = []
+#         for e in episodes:
+#             action = e.action.tolist()
+#             action_index = action.index(1)
+#             curr_state = torch.from_numpy(np.stack(e.state)).unsqueeze(0).to(torch.float).to(Constants.DEVICE)
+#             next_state = torch.from_numpy(np.stack(e.next_state)).unsqueeze(0).to(torch.float).to(Constants.DEVICE)
+#             state_action_value = self.pol_net(curr_state)[0]
+#             state_action_value = state_action_value[action_index]
+# #             state_action_value = self.pol_net(torch.cat((e.prev_state, e.state), 0))[action_index]
+#             next_state_action_value = 0 if e.is_terminal else self.tar_net(next_state)[0].detach().max(0)[0]
+# #             next_state_action_value = 0 if e.is_terminal else self.tar_net(torch.cat((e.state, e.next_state), 0)).max(0)[0]
+# #             next_state_action_value = self.tar_net(torch.cat((e.state, e.next_state), 0)).max(0)[0]
+# #             next_state_action_value = self.tar_net(torch.cat((e.state, e.next_state), 0)).max(0)[0]
+#             target_action_value = (next_state_action_value * PacmanAgent.GAMMA) + e.reward
+#             av_inspect.append(target_action_value)
+#             state_action_values[action_index] += state_action_value
+#             target_action_values[action_index] += target_action_value[0]
+        
+        state_action_values_new = self.pol_net(batch_s).gather(1, batch_a)
+        
+        next_state_action_values_new = self.tar_net(batch_n).detach().max(1)[0].unsqueeze(1)
+        
+        target_action_values_new = (next_state_action_values_new * PacmanAgent.GAMMA) + batch_r
+        
         # Compute Huber loss
         criterion = nn.SmoothL1Loss()
 #         print("Q(s,a)= ", state_action_values)
 #         print("Target= ", target_action_values)
-        loss = criterion(state_action_values, target_action_values)
+        loss = criterion(state_action_values_new, target_action_values_new)
     
         # Optimize the model
         self.optimizer.zero_grad()

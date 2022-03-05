@@ -7,6 +7,7 @@ import time
 import random
 import re
 import pandas as pd
+import numpy as np
 import torch
 import torch.nn.functional as F
 import pickle
@@ -21,7 +22,7 @@ from environment import *
 from statistics import *
 
 Episode = namedtuple('Episode',
-                        ('prev_state', 'state', 'action', 'next_state', 'reward', 'is_terminal'))
+                        ('state', 'action', 'next_state', 'reward', 'is_terminal'))
 
 class ReplayMemory(object):
     
@@ -51,6 +52,9 @@ class ReplayMemory(object):
     def __len__(self):
         return len(self.memory)
     
+    def move_vec_to_index(vec):
+        return list(vec).index(1)
+    
     def vectorize_maze(maze):
         '''
         Converts the raw input maze (some Strings representing the Maze
@@ -63,14 +67,16 @@ class ReplayMemory(object):
         :maze: String grid representation of the maze and its entities
         :returns: 1-D numerical pytorch tensor representing the maze
         '''
-        result = []
-        for row in maze:
-            for cell in row:
-                if not cell in Constants.ENTITIES:
-                    cell = "." # Hack for the environment's mechanics
-                result.append(ReplayMemory.maze_entity_indexes[cell])
+        rows = len(maze)
+        cols = len(maze[0])
+        result = np.zeros((len(Constants.ENTITIES), rows, cols), dtype=np.int8)
+        for r, row in enumerate(maze):
+            for c, cell in enumerate(row):
+                if cell in Constants.ENTITIES:
+                    result[ReplayMemory.maze_entity_indexes[cell]][r][c] = 1.0
         
-        return torch.flatten(F.one_hot(torch.tensor(result, dtype=torch.long), num_classes=len(ReplayMemory.maze_entity_indexes))).to(torch.float).to(Constants.DEVICE)
+        return result
+#         return torch.from_numpy(result).to(torch.float).unsqueeze(0).to(Constants.DEVICE)
     
     def vectorize_move(move):
         '''
@@ -108,16 +114,29 @@ class PacNet(nn.Module):
         entities = len(Constants.ENTITIES)
         moves = len(Constants.MOVES)
         self.maze_vec_dims = rows * cols * entities
-        self.linear_relu_stack = nn.Sequential(
-#             nn.Linear(self.maze_vec_dims * 2, 128),
-            nn.Linear(self.maze_vec_dims, self.maze_vec_dims),
-            nn.ReLU(),
-            nn.Linear(self.maze_vec_dims, self.maze_vec_dims),
-            nn.ReLU(),
-            nn.Linear(self.maze_vec_dims, self.maze_vec_dims),
-            nn.ReLU(),
-            nn.Linear(self.maze_vec_dims, moves),
-        )
+        
+        # Convolutional and pooling layers
+#         self.conv1 = nn.Conv3d(entities, 16, kernel_size=5, stride=2)
+#         self.bn1 = nn.BatchNorm3d(16)
+#         self.conv2 = nn.Conv3d(16, 32, kernel_size=5, stride=2)
+#         self.bn2 = nn.BatchNorm3d(32)
+#         self.conv3 = nn.Conv3d(32, 32, kernel_size=5, stride=2)
+#         self.bn3 = nn.BatchNorm3d(32)
+
+        self.conv1 = nn.Conv2d(entities, 32, kernel_size=2, stride=1)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=2, stride=1)
+        
+        # Dense layer with outputs
+        def conv2d_size_out(size, kernel_size = 2, stride = 1):
+            return (size - (kernel_size - 1) - 1) // stride  + 1
+        convw = conv2d_size_out(conv2d_size_out(conv2d_size_out(cols)))
+        convh = conv2d_size_out(conv2d_size_out(conv2d_size_out(rows)))
+        linear_input_size = convw * convh * 64
+        
+        self.fc3 = nn.Linear(2240, 512)
+        self.fc4 = nn.Linear(512, moves)
+#         self.head = nn.Linear(linear_input_size, moves)
+
 
     def forward(self, x):
         """
@@ -125,8 +144,15 @@ class PacNet(nn.Module):
         :x: Raw input vector at the first layer of the neural network
         :returns: Output Q(s,a) activations for each a
         """
-        q_vals = self.linear_relu_stack(x)
-        return q_vals
+        x = F.relu(self.conv1(x))
+        x = F.relu(self.conv2(x))
+        x = F.relu(self.fc3(x.view(x.size(0), -1)))
+        x = self.fc4(x)
+        return x
+#         x = F.relu(self.bn1(self.conv1(x)))
+#         x = F.relu(self.bn2(self.conv2(x)))
+#         x = F.relu(self.bn3(self.conv3(x)))
+#         return self.head(torch.flatten(x))
 
 if __name__ == "__main__":
     win_ema = 0
@@ -141,7 +167,7 @@ if __name__ == "__main__":
         print("Iteration " + str(i_episode))
         print("==============================")
         # Initialize the environment and state
-        outcome = Environment.run_game(debug=False, step=False, gui=False)
+        outcome = Environment.run_game(debug=Constants.DEBUG, verbose=Constants.VERBOSE, step=False, gui=Constants.GUI)
         win_ema = (1-ema_alpha) * win_ema + (ema_alpha) * outcome["win"]
         move_ema = (1-ema_alpha) * move_ema + (ema_alpha) * (outcome["moves"] / Constants.MAX_MOVES)
         pell_ema = (1-ema_alpha) * pell_ema + (ema_alpha) * (outcome["pellets"] / outcome["max_pellets"])

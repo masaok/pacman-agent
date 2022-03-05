@@ -130,6 +130,8 @@ class PacmanAgent:
         batch_n = torch.from_numpy(np.stack(batch_n)).to(torch.float).to(Constants.DEVICE)
         batch_t = torch.ByteTensor(batch_t).unsqueeze(1).to(Constants.DEVICE)
     
+        non_final_mask = torch.tensor(tuple(map(lambda s: s == False, batch_t)), device=Constants.DEVICE, dtype=torch.bool)
+        non_final_next_states = torch.stack([s for i,s in enumerate(batch_n) if not batch_t[i]])
         # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
         # columns of actions taken. These are the actions which would've been taken
         # for each batch state according to self.pol_net
@@ -156,7 +158,9 @@ class PacmanAgent:
         
         state_action_values_new = self.pol_net(batch_s).gather(1, batch_a)
         
-        next_state_action_values_new = self.tar_net(batch_n).detach().max(1)[0].unsqueeze(1)
+        next_state_action_values_new = torch.zeros(PacmanAgent.BATCH_SIZE, device=Constants.DEVICE)
+#         next_state_action_values_new[non_final_mask] = self.tar_net(non_final_next_states).detach().max(1)[0].unsqueeze(1)
+        next_state_action_values_new[non_final_mask] = self.tar_net(non_final_next_states).detach().max(1)[0]
         
         target_action_values_new = (next_state_action_values_new * PacmanAgent.GAMMA) + batch_r
         

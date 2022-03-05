@@ -155,6 +155,7 @@ class PacNet(nn.Module):
 #         return self.head(torch.flatten(x))
 
 if __name__ == "__main__":
+    wins = 0
     win_ema = 0
     move_ema = 0
     pell_ema = 0
@@ -168,13 +169,13 @@ if __name__ == "__main__":
         print("==============================")
         # Initialize the environment and state
         outcome = Environment.run_game(debug=Constants.DEBUG, verbose=Constants.VERBOSE, step=False, gui=Constants.GUI)
+        wins += outcome["win"]
         win_ema = (1-ema_alpha) * win_ema + (ema_alpha) * outcome["win"]
         move_ema = (1-ema_alpha) * move_ema + (ema_alpha) * (outcome["moves"] / Constants.MAX_MOVES)
         pell_ema = (1-ema_alpha) * pell_ema + (ema_alpha) * (outcome["pellets"] / outcome["max_pellets"])
-        print("  [M] Moves: ", outcome["moves"])
-        print("  [P] Pellets: ", outcome["pellets"], pell_ema)
-        print("  > Win Average: ", win_ema)
-        print("  > Moves Average: ", move_ema)
+        print("  [M] Moves:\t\t\t", outcome["moves"], move_em)
+        print("  [P] Pellets:\t\t\t", outcome["pellets"], pell_ema)
+        print("  [W] Wins:\t\t\t", wins, win_ema)
         plot_wins.append(win_ema)
         plot_moves.append(move_ema)
         plot_pells.append(pell_ema)

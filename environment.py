@@ -359,12 +359,10 @@ class Environment:
     
         # Graphical
         Environment.running_env.move()
-        print("END MAIN MOVE")
     
         if gui:
             Environment.running_env._window.mainloop()
         
-        print("END MAIN LOOP")
         return Environment.running_env.outcome
 
 

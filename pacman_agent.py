@@ -27,7 +27,7 @@ class PacmanAgent:
     EPS_START = 0.9
     EPS_END = 0.05
     EPS_DECAY = 200
-    TARGET_UPDATE = 100
+    TARGET_UPDATE = 100 # FIXME was 20?
     MEM_SIZE = 10000
 
     def __init__(self, maze):
@@ -64,7 +64,7 @@ class PacmanAgent:
         :return: Action choice from the set of legal_actions
         """
         legal_actions = dict(legal_actions)
-        if random.random() < PacmanAgent.EPS_GREEDY:
+        if random.random() < PacmanAgent.EPS_GREEDY and not Constants.TRAINING:
             return random.choice(list(legal_actions.keys()))
         curr_state = ReplayMemory.vectorize_maze(perception)
 #         maze_vectorized = torch.cat((self.prev_state, curr_state), 0)
@@ -91,13 +91,15 @@ class PacmanAgent:
         return reward
     
     def give_transition(self, state, action, next_state, is_terminal):
+        if not Constants.TRAINING:
+            return
         reward_val = self.get_reward(state, action, next_state)
         reward = torch.tensor([reward_val], device=Constants.DEVICE)
         state_vec = ReplayMemory.vectorize_maze(state)
         mem_weight = 1 if reward_val < 0 else 10
         for m in range(mem_weight):
             self.memory.push(
-#                 self.prev_state,
+    #           self.prev_state,
                 state_vec,
                 ReplayMemory.vectorize_move(action),
                 ReplayMemory.vectorize_maze(next_state),
@@ -111,6 +113,8 @@ class PacmanAgent:
 #         self.prev_state = state_vec
     
     def give_terminal(self):
+        if not Constants.TRAINING:
+            return
         torch.save(self.pol_net.state_dict(), Constants.PARAM_PATH)
         self.memory.save()
     

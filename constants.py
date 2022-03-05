@@ -15,11 +15,12 @@ class Constants:
     # Game-specific constants
     MAX_MOVES = 200
     TICK_LEN = 0 # in ms
-    N_SIMS = 500
+    N_SIMS = 120
     GHOST_EPSILON = 0.1
     DEBUG = False
     VERBOSE = False
     GUI = False
+    TRAINING = False
 
     # Movement constants + location modifiers
     MOVES = ["U", "D", "L", "R"]

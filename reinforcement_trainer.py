@@ -75,7 +75,7 @@ class ReplayMemory(object):
                 if cell in Constants.ENTITIES:
                     result[ReplayMemory.maze_entity_indexes[cell]][r][c] = 1.0
         
-        return result
+        return result.flatten()
 #         return torch.from_numpy(result).to(torch.float).unsqueeze(0).to(Constants.DEVICE)
     
     def vectorize_move(move):
@@ -115,27 +115,32 @@ class PacNet(nn.Module):
         moves = len(Constants.MOVES)
         self.maze_vec_dims = rows * cols * entities
         
-        # Convolutional and pooling layers
-#         self.conv1 = nn.Conv3d(entities, 16, kernel_size=5, stride=2)
-#         self.bn1 = nn.BatchNorm3d(16)
-#         self.conv2 = nn.Conv3d(16, 32, kernel_size=5, stride=2)
-#         self.bn2 = nn.BatchNorm3d(32)
-#         self.conv3 = nn.Conv3d(32, 32, kernel_size=5, stride=2)
-#         self.bn3 = nn.BatchNorm3d(32)
-
-        self.conv1 = nn.Conv2d(entities, 32, kernel_size=2, stride=1)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=2, stride=1)
+        # Dense approach
+        # --------------------------------------------------------------------
+        self.linear_relu_stack = nn.Sequential(
+            nn.Linear(self.maze_vec_dims, self.maze_vec_dims),
+            nn.ReLU(),
+            nn.Linear(self.maze_vec_dims, self.maze_vec_dims),
+            nn.ReLU(),
+            nn.Linear(self.maze_vec_dims, moves)
+        )
+        # --------------------------------------------------------------------
         
-        # Dense layer with outputs
-        def conv2d_size_out(size, kernel_size = 2, stride = 1):
-            return (size - (kernel_size - 1) - 1) // stride  + 1
-        convw = conv2d_size_out(conv2d_size_out(conv2d_size_out(cols)))
-        convh = conv2d_size_out(conv2d_size_out(conv2d_size_out(rows)))
-        linear_input_size = convw * convh * 64
-        
-        self.fc3 = nn.Linear(2240, 512)
-        self.fc4 = nn.Linear(512, moves)
+        # Convolutional approach
+        # --------------------------------------------------------------------
+#         self.conv1 = nn.Conv2d(entities, 32, kernel_size=2, stride=1)
+#         self.conv2 = nn.Conv2d(32, 64, kernel_size=2, stride=1)
+#         
+#         def conv2d_size_out(size, kernel_size = 2, stride = 1):
+#             return (size - (kernel_size - 1) - 1) // stride  + 1
+#         convw = conv2d_size_out(conv2d_size_out(conv2d_size_out(cols)))
+#         convh = conv2d_size_out(conv2d_size_out(conv2d_size_out(rows)))
+#         linear_input_size = convw * convh * 64
+#         
+#         self.fc3 = nn.Linear(2240, 512)
+#         self.fc4 = nn.Linear(512, moves)
 #         self.head = nn.Linear(linear_input_size, moves)
+        # --------------------------------------------------------------------
 
 
     def forward(self, x):
@@ -144,15 +149,20 @@ class PacNet(nn.Module):
         :x: Raw input vector at the first layer of the neural network
         :returns: Output Q(s,a) activations for each a
         """
-        x = F.relu(self.conv1(x))
-        x = F.relu(self.conv2(x))
-        x = F.relu(self.fc3(x.view(x.size(0), -1)))
-        x = self.fc4(x)
-        return x
-#         x = F.relu(self.bn1(self.conv1(x)))
-#         x = F.relu(self.bn2(self.conv2(x)))
-#         x = F.relu(self.bn3(self.conv3(x)))
-#         return self.head(torch.flatten(x))
+        # Dense approach
+        # --------------------------------------------------------------------
+        q_vals = self.linear_relu_stack(x)
+        return q_vals
+        # --------------------------------------------------------------------
+        
+        # Convolutional approach
+        # --------------------------------------------------------------------
+#         x = F.relu(self.conv1(x))
+#         x = F.relu(self.conv2(x))
+#         x = F.relu(self.fc3(x.view(x.size(0), -1)))
+#         x = self.fc4(x)
+#         return x
+        # --------------------------------------------------------------------
 
 if __name__ == "__main__":
     wins = 0
@@ -173,9 +183,9 @@ if __name__ == "__main__":
         win_ema = (1-ema_alpha) * win_ema + (ema_alpha) * outcome["win"]
         move_ema = (1-ema_alpha) * move_ema + (ema_alpha) * (outcome["moves"] / Constants.MAX_MOVES)
         pell_ema = (1-ema_alpha) * pell_ema + (ema_alpha) * (outcome["pellets"] / outcome["max_pellets"])
-        print("  [M] Moves:\t\t\t", outcome["moves"], move_em)
-        print("  [P] Pellets:\t\t\t", outcome["pellets"], pell_ema)
-        print("  [W] Wins:\t\t\t", wins, win_ema)
+        print("  [M] Moves:\t", outcome["moves"], "\t", move_ema)
+        print("  [P] Pellets:\t", outcome["pellets"], "\t", pell_ema)
+        print("  [W] Wins:\t", wins, "\t", win_ema)
         plot_wins.append(win_ema)
         plot_moves.append(move_ema)
         plot_pells.append(pell_ema)

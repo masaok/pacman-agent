@@ -27,8 +27,9 @@ class PacmanAgent:
     EPS_START = 0.9
     EPS_END = 0.05
     EPS_DECAY = 200
-    TARGET_UPDATE = 100 # FIXME was 20?
+    TARGET_UPDATE = 100
     MEM_SIZE = 10000
+    LEARN_DELAY = 0
 
     def __init__(self, maze):
         """
@@ -64,12 +65,18 @@ class PacmanAgent:
         :return: Action choice from the set of legal_actions
         """
         legal_actions = dict(legal_actions)
-        if random.random() < PacmanAgent.EPS_GREEDY and not Constants.TRAINING:
+#         sample = random.random()
+#         eps_threshold = PacmanAgent.EPS_END + (PacmanAgent.EPS_START - PacmanAgent.EPS_END) * math.exp(-1. * len(self.memory) / PacmanAgent.EPS_DECAY)
+#         if sample < eps_threshold and Constants.TRAINING:
+        if random.random() < PacmanAgent.EPS_GREEDY and Constants.TRAINING:
             return random.choice(list(legal_actions.keys()))
         curr_state = ReplayMemory.vectorize_maze(perception)
 #         maze_vectorized = torch.cat((self.prev_state, curr_state), 0)
-        maze_vectorized = torch.from_numpy(np.stack(curr_state)).unsqueeze(0).to(torch.float).to(Constants.DEVICE)
-        move_probs = self.pol_net(maze_vectorized)[0].tolist()
+#         maze_vectorized = torch.from_numpy(np.stack(curr_state)).unsqueeze(0).to(torch.float).to(Constants.DEVICE)
+        maze_vectorized = torch.from_numpy(curr_state).flatten().to(torch.float).to(Constants.DEVICE)
+        # FIXME: Sussy?
+#         move_probs = self.pol_net(maze_vectorized)[0].tolist()
+        move_probs = self.pol_net(maze_vectorized)
         move_probs = {move: move_probs[moveIdx] for moveIdx, move in enumerate(Constants.MOVES)}
         move_probs = {move: prob for (move, prob) in move_probs.items() if move in {s[0] for s in legal_actions}}
         return max(move_probs, key=move_probs.get) if len(move_probs) > 0 else random.choice(list(legal_actions.keys()))
@@ -119,7 +126,7 @@ class PacmanAgent:
         self.memory.save()
     
     def optimize_model(self):
-        if len(self.memory) < PacmanAgent.BATCH_SIZE:
+        if len(self.memory) < PacmanAgent.BATCH_SIZE or len(self.memory) < PacmanAgent.LEARN_DELAY:
             return
         episodes = self.memory.sample(PacmanAgent.BATCH_SIZE)
         batch_s, batch_a, batch_n, batch_r, batch_t = zip(*episodes)
@@ -130,8 +137,6 @@ class PacmanAgent:
         batch_n = torch.from_numpy(np.stack(batch_n)).to(torch.float).to(Constants.DEVICE)
         batch_t = torch.ByteTensor(batch_t).unsqueeze(1).to(Constants.DEVICE)
     
-        non_final_mask = torch.tensor(tuple(map(lambda s: s == False, batch_t)), device=Constants.DEVICE, dtype=torch.bool)
-        non_final_next_states = torch.stack([s for i,s in enumerate(batch_n) if not batch_t[i]])
         # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
         # columns of actions taken. These are the actions which would've been taken
         # for each batch state according to self.pol_net
@@ -158,11 +163,14 @@ class PacmanAgent:
         
         state_action_values_new = self.pol_net(batch_s).gather(1, batch_a)
         
+        non_final_mask = torch.tensor(tuple(map(lambda s: s == False, batch_t)), device=Constants.DEVICE, dtype=torch.bool)
+        non_final_next_states = torch.stack([s for i,s in enumerate(batch_n) if not batch_t[i]])
         next_state_action_values_new = torch.zeros(PacmanAgent.BATCH_SIZE, device=Constants.DEVICE)
-#         next_state_action_values_new[non_final_mask] = self.tar_net(non_final_next_states).detach().max(1)[0].unsqueeze(1)
         next_state_action_values_new[non_final_mask] = self.tar_net(non_final_next_states).detach().max(1)[0]
-        
+#         next_state_action_values_new = self.tar_net(batch_n).detach().max(1)[0].unsqueeze(1)
         target_action_values_new = (next_state_action_values_new * PacmanAgent.GAMMA) + batch_r
+        target_action_values_new = target_action_values_new[0].unsqueeze(1)
+#         target_action_values_new = target_action_values_new.flatten()
         
         # Compute Huber loss
         criterion = nn.SmoothL1Loss()

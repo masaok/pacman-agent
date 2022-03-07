@@ -53,8 +53,8 @@ class PacmanAgent:
             self.memory.load()
         # self.pol_net.eval()
         self.tar_net.eval()
-        self.optimizer = torch.optim.RMSprop(self.pol_net.parameters())
-#         self.optimizer = torch.optim.RMSprop(self.pol_net.parameters(), lr=0.00025, alpha=0.95, eps=0.01)
+        # self.optimizer = torch.optim.RMSprop(self.pol_net.parameters())
+        self.optimizer = torch.optim.RMSprop(self.pol_net.parameters(), lr=0.00025, alpha=0.95, eps=0.01)
 
     def choose_action(self, perception, legal_actions):
         """
@@ -72,11 +72,11 @@ class PacmanAgent:
             return random.choice(list(legal_actions.keys()))
         curr_state = ReplayMemory.vectorize_maze(perception)
 #         maze_vectorized = torch.cat((self.prev_state, curr_state), 0)
-#         maze_vectorized = torch.from_numpy(np.stack(curr_state)).unsqueeze(0).to(torch.float).to(Constants.DEVICE)
-        maze_vectorized = torch.from_numpy(curr_state).flatten().to(torch.float).to(Constants.DEVICE)
+        maze_vectorized = torch.from_numpy(np.stack(curr_state)).unsqueeze(0).to(torch.float).to(Constants.DEVICE)
+        # maze_vectorized = torch.from_numpy(curr_state).flatten().to(torch.float).to(Constants.DEVICE)
         # FIXME: Sussy?
-#         move_probs = self.pol_net(maze_vectorized)[0].tolist()
-        move_probs = self.pol_net(maze_vectorized)
+        move_probs = self.pol_net(maze_vectorized)[0].tolist()
+        # move_probs = self.pol_net(maze_vectorized)
         move_probs = {move: move_probs[moveIdx] for moveIdx, move in enumerate(Constants.MOVES)}
         move_probs = {move: prob for (move, prob) in move_probs.items() if move in {s[0] for s in legal_actions}}
         return max(move_probs, key=move_probs.get) if len(move_probs) > 0 else random.choice(list(legal_actions.keys()))
@@ -167,9 +167,9 @@ class PacmanAgent:
         non_final_next_states = torch.stack([s for i,s in enumerate(batch_n) if not batch_t[i]])
         next_state_action_values_new = torch.zeros(PacmanAgent.BATCH_SIZE, device=Constants.DEVICE)
         next_state_action_values_new[non_final_mask] = self.tar_net(non_final_next_states).detach().max(1)[0]
-#         next_state_action_values_new = self.tar_net(batch_n).detach().max(1)[0].unsqueeze(1)
+        next_state_action_values_new = next_state_action_values_new.unsqueeze(1)
+        # next_state_action_values_new = self.tar_net(batch_n).detach().max(1)[0].unsqueeze(1)
         target_action_values_new = (next_state_action_values_new * PacmanAgent.GAMMA) + batch_r
-        target_action_values_new = target_action_values_new[0].unsqueeze(1)
 #         target_action_values_new = target_action_values_new.flatten()
         
         # Compute Huber loss
@@ -181,6 +181,6 @@ class PacmanAgent:
         # Optimize the model
         self.optimizer.zero_grad()
         loss.backward()
-        for param in self.pol_net.parameters():
-            param.grad.data.clamp_(-1, 1)
+        # for param in self.pol_net.parameters():
+        #     param.grad.data.clamp_(-1, 1)
         self.optimizer.step()

@@ -75,8 +75,9 @@ class ReplayMemory(object):
                 if cell in Constants.ENTITIES:
                     result[ReplayMemory.maze_entity_indexes[cell]][r][c] = 1.0
         
-        return result.flatten()
-#         return torch.from_numpy(result).to(torch.float).unsqueeze(0).to(Constants.DEVICE)
+        return result
+        # return result.flatten()
+        # return torch.from_numpy(result).to(torch.float).unsqueeze(0).to(Constants.DEVICE)
     
     def vectorize_move(move):
         '''
@@ -117,29 +118,29 @@ class PacNet(nn.Module):
         
         # Dense approach
         # --------------------------------------------------------------------
-        self.linear_relu_stack = nn.Sequential(
-            nn.Linear(self.maze_vec_dims, self.maze_vec_dims),
-            nn.ReLU(),
-            nn.Linear(self.maze_vec_dims, self.maze_vec_dims),
-            nn.ReLU(),
-            nn.Linear(self.maze_vec_dims, moves)
-        )
+        # self.linear_relu_stack = nn.Sequential(
+        #     nn.Linear(self.maze_vec_dims, self.maze_vec_dims),
+        #     nn.ReLU(),
+        #     nn.Linear(self.maze_vec_dims, self.maze_vec_dims),
+        #     nn.ReLU(),
+        #     nn.Linear(self.maze_vec_dims, moves)
+        # )
         # --------------------------------------------------------------------
         
         # Convolutional approach
         # --------------------------------------------------------------------
-#         self.conv1 = nn.Conv2d(entities, 32, kernel_size=2, stride=1)
-#         self.conv2 = nn.Conv2d(32, 64, kernel_size=2, stride=1)
-#         
-#         def conv2d_size_out(size, kernel_size = 2, stride = 1):
-#             return (size - (kernel_size - 1) - 1) // stride  + 1
-#         convw = conv2d_size_out(conv2d_size_out(conv2d_size_out(cols)))
-#         convh = conv2d_size_out(conv2d_size_out(conv2d_size_out(rows)))
-#         linear_input_size = convw * convh * 64
-#         
-#         self.fc3 = nn.Linear(2240, 512)
-#         self.fc4 = nn.Linear(512, moves)
-#         self.head = nn.Linear(linear_input_size, moves)
+        self.conv1 = nn.Conv2d(entities, 32, kernel_size=3, stride=1)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=2, stride=1)
+         
+        def conv2d_size_out(size, kernel_size = 2, stride = 1):
+            return (size - (kernel_size - 1) - 1) // stride  + 1
+        convw = conv2d_size_out(conv2d_size_out(conv2d_size_out(cols)))
+        convh = conv2d_size_out(conv2d_size_out(conv2d_size_out(rows)))
+        linear_input_size = convw * convh * 64
+         
+        self.fc3 = nn.Linear(1536, 512)
+        self.fc4 = nn.Linear(512, moves)
+        self.head = nn.Linear(linear_input_size, moves)
         # --------------------------------------------------------------------
 
 
@@ -151,17 +152,17 @@ class PacNet(nn.Module):
         """
         # Dense approach
         # --------------------------------------------------------------------
-        q_vals = self.linear_relu_stack(x)
-        return q_vals
+        # q_vals = self.linear_relu_stack(x)
+        # return q_vals
         # --------------------------------------------------------------------
         
         # Convolutional approach
         # --------------------------------------------------------------------
-#         x = F.relu(self.conv1(x))
-#         x = F.relu(self.conv2(x))
-#         x = F.relu(self.fc3(x.view(x.size(0), -1)))
-#         x = self.fc4(x)
-#         return x
+        x = F.relu(self.conv1(x))
+        x = F.relu(self.conv2(x))
+        x = F.relu(self.fc3(x.view(x.size(0), -1)))
+        x = self.fc4(x)
+        return x
         # --------------------------------------------------------------------
 
 if __name__ == "__main__":

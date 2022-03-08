@@ -54,7 +54,8 @@ class PacmanAgent:
         # self.pol_net.eval()
         self.tar_net.eval()
         # self.optimizer = torch.optim.RMSprop(self.pol_net.parameters())
-        self.optimizer = torch.optim.RMSprop(self.pol_net.parameters(), lr=0.00025, alpha=0.95, eps=0.01)
+        # self.optimizer = torch.optim.RMSprop(self.pol_net.parameters(), lr=0.00025, alpha=0.95, eps=0.01)
+        self.optimizer = torch.optim.Adam(self.pol_net.parameters())
 
     def choose_action(self, perception, legal_actions):
         """

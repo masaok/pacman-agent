@@ -15,7 +15,7 @@ class Constants:
     # Game-specific constants
     MAX_MOVES = 200
     TICK_LEN = 0 # in ms
-    N_SIMS = 1000
+    N_SIMS = 500
     GHOST_EPSILON = 0.1
     DEBUG = False
     VERBOSE = False

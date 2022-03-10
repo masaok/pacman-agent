@@ -186,11 +186,11 @@ class Environment:
             self._cleanup()
             return
 
+        # Transition recorded
         next_state = copy.deepcopy(self._maze)
         self._agent.give_transition(state, next_act, next_state, False)
 
         # MazeUI Stuff
-
         if self._step:
             # Wait for the button to be pressed to step forward
             self._window.after(0, self.move)
@@ -353,11 +353,7 @@ class Environment:
             index += 1
             
     def run_game (verbose=False, debug=False, step=False, gui=True):
-        # Start the environment
-        # Call with tick_length = 0 for instant games
         Environment.running_env = Environment(Constants.MAZE, verbose=verbose, debug=debug, step=step, gui=gui)
-    
-        # Graphical
         Environment.running_env.move()
     
         if gui:
@@ -372,7 +368,6 @@ def on_exit():
     if not Environment.running_env is None:
         Environment.running_env._maze_ui.window.destroy()  # env window
         Environment.running_env._maze_ui.btn_var.set("")
-    # exit(0)
 
 if __name__ == "__main__":
 

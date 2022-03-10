@@ -21,51 +21,67 @@ from constants import *
 from environment import *
 from statistics import *
 
-Episode = namedtuple('Episode',
-                        ('state', 'action', 'next_state', 'reward', 'is_terminal'))
+Episode = namedtuple('Episode', ('state', 'action', 'next_state', 'reward', 'is_terminal'))
 
 class ReplayMemory(object):
     
-    # [!] Class maps that may be useful for vectorizing the maze
     maze_entity_indexes = {entity: index for index, entity in enumerate(Constants.ENTITIES)}
     move_indexes = {move: index for index, move in enumerate(Constants.MOVES)}
 
     def __init__(self, capacity):
+        '''
+        Initializes the ReplayMemory object with a deque that will never exceed
+        the given capacity. Older memories are replaced by newer ones once the memory
+        reaches this size.
+        :capacity: Max number of episodes to hold in the memory
+        '''
         self.memory = deque([],maxlen=capacity)
 
     def push(self, *args):
+        '''
+        Adds a new episode to this ReplayMemory
+        '''
         self.memory.append(Episode(*args))
 
     def sample(self, batch_size):
+        '''
+        Returns a batch of episodes of the requested batch_size
+        :batch_size: the number of episodes to return
+        :returns: list of batch_size randomly sampled episodes
+        '''
         return random.sample(self.memory, batch_size)
     
     def save (self):
+        '''
+        Saves the current ReplayMemory's episodes to disk so that they may
+        persist between training sessions. Saved to Constants.MEM_PATH
+        '''
         mem_file = open(Constants.MEM_PATH, "wb")
         pickle.dump(self.memory, mem_file)
         mem_file.close()
         
     def load(self):
+        '''
+        Loads a ReplayMemory's episodes from disk if it exists at Constants.MEM_PATH
+        '''
         mem_file = open(Constants.MEM_PATH, "rb")
         self.memory = pickle.load(mem_file)
         mem_file.close()
 
     def __len__(self):
+        '''
+        :returns: the number episodes currently stored in the ReplayMemory 
+        '''
         return len(self.memory)
-    
-    def move_vec_to_index(vec):
-        return list(vec).index(1)
     
     def vectorize_maze(maze):
         '''
         Converts the raw input maze (some Strings representing the Maze
         entities as specified in Constants.ENTITIES) into the vectorized
         input layer for the PacNet.
-        [!] Indicies of maze entities should always correspond to their
-            order in Constants.ENTITIES; see maze_entity_indexes map as
-            a convenient tool for ensuring this.
-        [!] Used in both training and deployment
         :maze: String grid representation of the maze and its entities
-        :returns: 1-D numerical pytorch tensor representing the maze
+        :returns: N x rows x cols numpy matrix where N = the number of maze
+        entities specified in Constants.ENTITIES
         '''
         rows = len(maze)
         cols = len(maze[0])
@@ -76,21 +92,24 @@ class ReplayMemory(object):
                     result[ReplayMemory.maze_entity_indexes[cell]][r][c] = 1.0
         
         return result
-        # return result.flatten()
-        # return torch.from_numpy(result).to(torch.float).unsqueeze(0).to(Constants.DEVICE)
     
     def vectorize_move(move):
         '''
         Converts the given move from the possibilities of Constants.MOVES to
         the one-hot pytorch tensor representation.
-        [!] Indicies of moves should always correspond to their
-            order in Constants.MOVES; see move_indexes map as a convenient
-            tool for ensuring this.
-        [!] Used in both training and deployment
         :move: String representing an action to be taken
         :returns: One-hot vector representation of that action.
         '''
         return F.one_hot(torch.tensor(ReplayMemory.move_indexes[move]), num_classes=len(ReplayMemory.move_indexes)).to(torch.float).to(Constants.DEVICE)
+    
+    def move_vec_to_index(vec):
+        '''
+        Converts the given 1-hot encoded vector of a move into its corresponding
+        integer index.
+        :vec: Vector representation of a move
+        :returns: Index of that vector
+        '''
+        return list(vec).index(1)
 
 
 class PacNet(nn.Module):
@@ -114,56 +133,36 @@ class PacNet(nn.Module):
         cols = len(maze[0])
         entities = len(Constants.ENTITIES)
         moves = len(Constants.MOVES)
-        self.maze_vec_dims = rows * cols * entities
+        conv1_out, conv2_out = 32, 64
+        fc_out = 512
         
-        # Dense approach
-        # --------------------------------------------------------------------
-        # self.linear_relu_stack = nn.Sequential(
-        #     nn.Linear(self.maze_vec_dims, self.maze_vec_dims),
-        #     nn.ReLU(),
-        #     nn.Linear(self.maze_vec_dims, self.maze_vec_dims),
-        #     nn.ReLU(),
-        #     nn.Linear(self.maze_vec_dims, moves)
-        # )
-        # --------------------------------------------------------------------
-        
-        # Convolutional approach
-        # --------------------------------------------------------------------
-        self.conv1 = nn.Conv2d(entities, 32, kernel_size=3, stride=1)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=2, stride=1)
-         
+        # Determine output size of convolutional layer as a function of maze size
         def conv2d_size_out(size, kernel_size = 2, stride = 1):
             return (size - (kernel_size - 1) - 1) // stride  + 1
         convw = conv2d_size_out(conv2d_size_out(conv2d_size_out(cols)))
         convh = conv2d_size_out(conv2d_size_out(conv2d_size_out(rows)))
-        linear_input_size = convw * convh * 64
-         
-        self.fc3 = nn.Linear(1536, 512)
-        self.fc4 = nn.Linear(512, moves)
+        linear_input_size = convw * convh * conv2_out
+        
+        # Two convolutional layers
+        self.conv1 = nn.Conv2d(entities, conv1_out, kernel_size=3, stride=1)
+        self.conv2 = nn.Conv2d(conv1_out, conv2_out, kernel_size=2, stride=1)
+        # Followed by a dense layer
+        self.fc3 = nn.Linear(linear_input_size, fc_out)
+        self.fc4 = nn.Linear(fc_out, moves)
         self.head = nn.Linear(linear_input_size, moves)
-        # --------------------------------------------------------------------
 
 
     def forward(self, x):
         """
         Computes the output of the PacNet for input maze x
-        :x: Raw input vector at the first layer of the neural network
+        :x: Raw state input at the first layer of the neural network
         :returns: Output Q(s,a) activations for each a
         """
-        # Dense approach
-        # --------------------------------------------------------------------
-        # q_vals = self.linear_relu_stack(x)
-        # return q_vals
-        # --------------------------------------------------------------------
-        
-        # Convolutional approach
-        # --------------------------------------------------------------------
         x = F.relu(self.conv1(x))
         x = F.relu(self.conv2(x))
         x = F.relu(self.fc3(x.view(x.size(0), -1)))
         x = self.fc4(x)
         return x
-        # --------------------------------------------------------------------
 
 if __name__ == "__main__":
     wins = 0
@@ -174,11 +173,11 @@ if __name__ == "__main__":
     plot_wins = []
     plot_moves = []
     plot_pells = []
+    
     for i_episode in range(Constants.N_SIMS):
         print("==============================")
         print("Iteration " + str(i_episode))
         print("==============================")
-        # Initialize the environment and state
         outcome = Environment.run_game(debug=Constants.DEBUG, verbose=Constants.VERBOSE, step=False, gui=Constants.GUI)
         wins += outcome["win"]
         win_ema = (1-ema_alpha) * win_ema + (ema_alpha) * outcome["win"]
@@ -193,8 +192,8 @@ if __name__ == "__main__":
     
     plt.figure(1)
     plt.clf()
-    plt.title("Test")
-    plt.xlabel("Episode")
+    plt.title("PacNet RL")
+    plt.xlabel("Game")
     plt.plot(plot_wins, label="Win %")
     plt.plot(plot_moves, label="Max Move %")
     plt.plot(plot_pells, label="Pellet %")

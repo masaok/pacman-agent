@@ -12,15 +12,24 @@ import torch
 
 class Constants:
 
-    # Game-specific constants
+    # Simulation constants
+    N_SIMS = 8000
     MAX_MOVES = 200
     TICK_LEN = 0 # in ms
-    N_SIMS = 500
     GHOST_EPSILON = 0.1
     DEBUG = False
     VERBOSE = False
     GUI = False
     TRAINING = True
+    
+    # Training Constants
+    BATCH_SIZE = 32
+    GAMMA = 0.95
+    EPS_GREEDY = 0.1
+    TARGET_UPDATE = 100
+    MEM_SIZE = 10000
+    PARAM_PATH = "./dat/params.pth"
+    MEM_PATH = "./dat/mem.pkl"
 
     # Movement constants + location modifiers
     MOVES = ["U", "D", "L", "R"]
@@ -35,15 +44,12 @@ class Constants:
     DEATH_BLOCK = "D"
     WIN_BLOCK = "W"
     TIMEOUT_BLOCK = "T"
-    # ENTITIES = [WALL_BLOCK, GHOST_BLOCK, PELLET_BLOCK, SAFE_BLOCK, PLR_BLOCK]
     ENTITIES = [WALL_BLOCK, PELLET_BLOCK, PLR_BLOCK]
     
     # Used to determine whether GPU acceleration is available or not
     DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
     
-    # Training and Maze Generation constants
-    PARAM_PATH = "./dat/params.pth" # Determines parameter save location
-    MEM_PATH = "./dat/mem.pkl"
+    # Active Maze Environment
     MAZE = ["XXXXXXXXX",
             "X..O...PX",
             "X.......X",

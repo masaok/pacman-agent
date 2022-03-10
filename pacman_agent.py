@@ -17,72 +17,58 @@ from maze_problem import *
 
 class PacmanAgent:
     '''
-    Deep learning Pacman agent that employs PacNets trained in the pac_trainer.py
-    module.
+    Deep learning Pacman agent that employs PacNet DQNs.
     '''
-
-    BATCH_SIZE = 32
-    GAMMA = 0.95
-    EPS_GREEDY = 0.1
-    EPS_START = 0.9
-    EPS_END = 0.05
-    EPS_DECAY = 200
-    TARGET_UPDATE = 100
-    MEM_SIZE = 10000
-    LEARN_DELAY = 0
 
     def __init__(self, maze):
         """
         Initializes the PacmanAgent with any attributes needed to make decisions;
-        for the deep-learning implementation, really just needs the model and
-        its plan Queue.
+        for the deep-learning implementation, this includes initializing the
+        policy DQN (+ target DQN, ReplayMemory, and optimizer if training) and
+        any other 
         :maze: The maze on which this agent is to operate. Must be the same maze
         structure as the one on which this agent's model was trained.
         """
-        
-        # TODO: What if params don't exist or aren't from the right device?
-        self.memory = ReplayMemory(PacmanAgent.MEM_SIZE)
+        self.memory = ReplayMemory(Constants.MEM_SIZE)
         self.pol_net = PacNet(maze).to(Constants.DEVICE)
         self.tar_net = PacNet(maze).to(Constants.DEVICE)
         self.steps = 0
-#         self.prev_state = torch.zeros(self.pol_net.maze_vec_dims, device=Constants.DEVICE)
         if exists(Constants.PARAM_PATH):
             self.pol_net.load_state_dict(torch.load(Constants.PARAM_PATH))
             self.tar_net.load_state_dict(self.pol_net.state_dict())
         if exists(Constants.MEM_PATH):
             self.memory.load()
-        # self.pol_net.eval()
         self.tar_net.eval()
-        # self.optimizer = torch.optim.RMSprop(self.pol_net.parameters())
-        # self.optimizer = torch.optim.RMSprop(self.pol_net.parameters(), lr=0.00025, alpha=0.95, eps=0.01)
         self.optimizer = torch.optim.Adam(self.pol_net.parameters())
 
     def choose_action(self, perception, legal_actions):
         """
         Returns an action from the options in Constants.MOVES based on the agent's
-        perception (the current maze) and legal actions available
+        perception (the current maze) and legal actions available. If training,
+        must manage the explore vs. exploit dilemma through some form of ASR.
         :perception: The current maze state in which to act
         :legal_actions: Map of legal actions to their next agent states
         :return: Action choice from the set of legal_actions
         """
         legal_actions = dict(legal_actions)
-#         sample = random.random()
-#         eps_threshold = PacmanAgent.EPS_END + (PacmanAgent.EPS_START - PacmanAgent.EPS_END) * math.exp(-1. * len(self.memory) / PacmanAgent.EPS_DECAY)
-#         if sample < eps_threshold and Constants.TRAINING:
-        if random.random() < PacmanAgent.EPS_GREEDY and Constants.TRAINING:
+        if random.random() < Constants.EPS_GREEDY and Constants.TRAINING:
             return random.choice(list(legal_actions.keys()))
         curr_state = ReplayMemory.vectorize_maze(perception)
-#         maze_vectorized = torch.cat((self.prev_state, curr_state), 0)
         maze_vectorized = torch.from_numpy(np.stack(curr_state)).unsqueeze(0).to(torch.float).to(Constants.DEVICE)
-        # maze_vectorized = torch.from_numpy(curr_state).flatten().to(torch.float).to(Constants.DEVICE)
-        # FIXME: Sussy?
         move_probs = self.pol_net(maze_vectorized)[0].tolist()
-        # move_probs = self.pol_net(maze_vectorized)
         move_probs = {move: move_probs[moveIdx] for moveIdx, move in enumerate(Constants.MOVES)}
         move_probs = {move: prob for (move, prob) in move_probs.items() if move in {s[0] for s in legal_actions}}
         return max(move_probs, key=move_probs.get) if len(move_probs) > 0 else random.choice(list(legal_actions.keys()))
     
     def get_reward(self, state, action, next_state):
+        '''
+        The reward function that determines the numerical desirability of the
+        given transition from state -> next_state with the chosen action.
+        :state: state at which the transition begun
+        :action: the action the agent chose from state
+        :next_state: the state at which the agent began its next turn
+        :returns: R(s, a, s') for the given transition
+        '''
         last_maze = MazeProblem(state)
         curr_maze = MazeProblem(next_state)
         reward = -0.1
@@ -99,16 +85,25 @@ class PacmanAgent:
         return reward
     
     def give_transition(self, state, action, next_state, is_terminal):
+        '''
+        Called by the Environment after both Pacman and ghosts have moved on a
+        given turn, supplying the transition that was observed, which can then
+        be added to the training agent's memory and the model optimized. Also
+        responsible for periodically updating the target network.
+        [!] If not training, this method should do nothing.
+        :state: state at which the transition begun
+        :action: the action the agent chose from state
+        :next_state: the state at which the agent began its next turn
+        :is_terminal: whether or not next_state is a terminal state
+        '''
         if not Constants.TRAINING:
             return
         reward_val = self.get_reward(state, action, next_state)
         reward = torch.tensor([reward_val], device=Constants.DEVICE)
-        state_vec = ReplayMemory.vectorize_maze(state)
         mem_weight = 1 if reward_val < 0 else 10
         for m in range(mem_weight):
             self.memory.push(
-    #           self.prev_state,
-                state_vec,
+                ReplayMemory.vectorize_maze(state),
                 ReplayMemory.vectorize_move(action),
                 ReplayMemory.vectorize_maze(next_state),
                 reward,
@@ -116,72 +111,62 @@ class PacmanAgent:
             )
         self.optimize_model()
         self.steps += 1
-        if self.steps % PacmanAgent.TARGET_UPDATE == 0:
+        if self.steps % Constants.TARGET_UPDATE == 0:
             self.tar_net.load_state_dict(self.pol_net.state_dict())
-#         self.prev_state = state_vec
     
     def give_terminal(self):
+        '''
+        Called by the Environment upon reaching any of the terminal states:
+          - Winning (eating all of the pellets)
+          - Dying (getting eaten by a ghost)
+          - Timing out (taking more than Constants.MAX_MOVES number of turns)
+        Useful for cleaning up fields, saving weights and memories to disk if
+        desired, etc.
+        [!] If not training, this method should do nothing.
+        '''
         if not Constants.TRAINING:
             return
         torch.save(self.pol_net.state_dict(), Constants.PARAM_PATH)
         self.memory.save()
     
     def optimize_model(self):
-        if len(self.memory) < PacmanAgent.BATCH_SIZE or len(self.memory) < PacmanAgent.LEARN_DELAY:
+        '''
+        Primary workhorse for training the policy DQN. Samples a mini-batch of
+        episodes from the ReplayMemory and then takes a step of the optimizer
+        to train the DQN weights.
+        [!] If not training OR fewer episodes than Constants.BATCH_SIZE have
+        been recorded, this method should do nothing.
+        '''
+        if len(self.memory) < Constants.BATCH_SIZE:
             return
-        episodes = self.memory.sample(PacmanAgent.BATCH_SIZE)
-        batch_s, batch_a, batch_n, batch_r, batch_t = zip(*episodes)
         
+        # Set up batch variables
+        episodes = self.memory.sample(Constants.BATCH_SIZE)
+        batch_s, batch_a, batch_n, batch_r, batch_t = zip(*episodes)
         batch_s = torch.from_numpy(np.stack(batch_s)).to(torch.float).to(Constants.DEVICE)
         batch_r = torch.DoubleTensor(batch_r).unsqueeze(1).to(Constants.DEVICE)
         batch_a = torch.LongTensor(list(map(ReplayMemory.move_vec_to_index, batch_a))).unsqueeze(1).to(Constants.DEVICE)
         batch_n = torch.from_numpy(np.stack(batch_n)).to(torch.float).to(Constants.DEVICE)
         batch_t = torch.ByteTensor(batch_t).unsqueeze(1).to(Constants.DEVICE)
     
-        # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
-        # columns of actions taken. These are the actions which would've been taken
-        # for each batch state according to self.pol_net
-#         state_action_values = torch.zeros(len(Constants.MOVES), device=Constants.DEVICE)
-#         target_action_values = torch.zeros(len(Constants.MOVES), device=Constants.DEVICE)
-#         action_indexes = torch.tensor([e.action.tolist().index(1) for e in episodes])
-#         av_inspect = []
-#         for e in episodes:
-#             action = e.action.tolist()
-#             action_index = action.index(1)
-#             curr_state = torch.from_numpy(np.stack(e.state)).unsqueeze(0).to(torch.float).to(Constants.DEVICE)
-#             next_state = torch.from_numpy(np.stack(e.next_state)).unsqueeze(0).to(torch.float).to(Constants.DEVICE)
-#             state_action_value = self.pol_net(curr_state)[0]
-#             state_action_value = state_action_value[action_index]
-# #             state_action_value = self.pol_net(torch.cat((e.prev_state, e.state), 0))[action_index]
-#             next_state_action_value = 0 if e.is_terminal else self.tar_net(next_state)[0].detach().max(0)[0]
-# #             next_state_action_value = 0 if e.is_terminal else self.tar_net(torch.cat((e.state, e.next_state), 0)).max(0)[0]
-# #             next_state_action_value = self.tar_net(torch.cat((e.state, e.next_state), 0)).max(0)[0]
-# #             next_state_action_value = self.tar_net(torch.cat((e.state, e.next_state), 0)).max(0)[0]
-#             target_action_value = (next_state_action_value * PacmanAgent.GAMMA) + e.reward
-#             av_inspect.append(target_action_value)
-#             state_action_values[action_index] += state_action_value
-#             target_action_values[action_index] += target_action_value[0]
+        # Q(s, a) for each episode's state s and chosen action a
+        state_action_values = self.pol_net(batch_s).gather(1, batch_a)
         
-        state_action_values_new = self.pol_net(batch_s).gather(1, batch_a)
-        
+        # Finding max_a' Q(s', a') for each episode based on the target network
         non_final_mask = torch.tensor(tuple(map(lambda s: s == False, batch_t)), device=Constants.DEVICE, dtype=torch.bool)
         non_final_next_states = torch.stack([s for i,s in enumerate(batch_n) if not batch_t[i]])
-        next_state_action_values_new = torch.zeros(PacmanAgent.BATCH_SIZE, device=Constants.DEVICE)
-        next_state_action_values_new[non_final_mask] = self.tar_net(non_final_next_states).detach().max(1)[0]
-        next_state_action_values_new = next_state_action_values_new.unsqueeze(1)
-        # next_state_action_values_new = self.tar_net(batch_n).detach().max(1)[0].unsqueeze(1)
-        target_action_values_new = (next_state_action_values_new * PacmanAgent.GAMMA) + batch_r
-#         target_action_values_new = target_action_values_new.flatten()
+        next_state_action_values = torch.zeros(Constants.BATCH_SIZE, device=Constants.DEVICE)
+        next_state_action_values[non_final_mask] = self.tar_net(non_final_next_states).detach().max(1)[0]
+        next_state_action_values = next_state_action_values.unsqueeze(1)
         
-        # Compute Huber loss
+        # Completing the temporal difference update: R(s, a, s') + GAMMA * max_a' Q(s', a')
+        target_action_values = (next_state_action_values * Constants.GAMMA) + batch_r
+        
+        # Compute Huber loss between actual and expected Q-values
         criterion = nn.SmoothL1Loss()
-#         print("Q(s,a)= ", state_action_values)
-#         print("Target= ", target_action_values)
-        loss = criterion(state_action_values_new, target_action_values_new)
+        loss = criterion(state_action_values, target_action_values)
     
-        # Optimize the model
+        # Optimize the model based on the computed loss
         self.optimizer.zero_grad()
         loss.backward()
-        # for param in self.pol_net.parameters():
-        #     param.grad.data.clamp_(-1, 1)
         self.optimizer.step()

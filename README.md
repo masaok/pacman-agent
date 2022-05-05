@@ -15,6 +15,10 @@
 
 - Python 3.9.4
 
+```
+brew install python-tk
+```
+
 ## Quickstart
 
 First, check out this repo and `cd` into the repo directory, then follow these steps:
@@ -31,6 +35,7 @@ $ python3 -u environment.py     # Run the app and show the GUI
 ```
 $ deactivate  # exit virtual environment
 ```
+
 ### Windows WSL2 Ubuntu Installation Guide
 
 ```

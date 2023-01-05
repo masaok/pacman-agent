@@ -6,10 +6,18 @@
 
 ## Environments Tested
 
-### Windows 10 (Build 19042.1288)
+### Windows 10 WSL2 Ubuntu (Build 19042.1288)
 
 - Git Bash
-- Python 3.9.8
+- Python 3.8.10 (Window WSL2 Ubuntu)
+- Python 3.9.8 ([See latest versions](https://www.python.org/downloads/))
+  - Python must be 3.9.x or [PyTorch will not work](https://pytorch.org/get-started/locally/#windows-python)
+
+```
+sudo apt update
+sudo apt-get install python3-venv python3-tk
+sudo apt-get install python3-tk
+```
 
 ### MacOS 11.6 (Build 20G165)
 
@@ -21,12 +29,12 @@ brew install python-tk
 
 ## Quickstart
 
-First, check out this repo and `cd` into the repo directory, then follow these steps:
-
 ```
+$ git clone git@github.com:masaok/pacman-agent.git
+$ cd pacman-agent
 $ python3 -m venv env
 $ source env/Scripts/activate  # Windows Git Bash only
-$ source env/bin/activate     # Mac / Linux only
+$ source env/bin/activate      # Mac / Linux only
 $ pip install -r requirements.txt
 $ python3 -u environment.py -h  # Show command-line help
 $ python3 -u environment.py     # Run the app and show the GUI
@@ -34,13 +42,6 @@ $ python3 -u environment.py     # Run the app and show the GUI
 
 ```
 $ deactivate  # exit virtual environment
-```
-
-### Windows WSL2 Ubuntu Installation Guide
-
-```
-sudo apt update
-sudo apt-get install python3-tk
 ```
 
 #### VcXsrv (X server for Windows to run GUI stuff)
@@ -51,14 +52,12 @@ When running it (it's called XLaunch in Windows), make sure to check this box:
 
 <img src="https://user-images.githubusercontent.com/1320083/144793105-700cf916-2702-4510-9e22-72e578c21e36.png" width="40%" height="40%">
 
-Also, add this to your `.bash_profile` and `source` it:
+Also, add [**this**](https://stackoverflow.com/a/61110604/10415969) to your `.bash_profile` and `source` it:
 
 ```
 export DISPLAY=$(awk '/nameserver / {print $2; exit}' /etc/resolv.conf 2>/dev/null):0
 export LIBGL_ALWAYS_INDIRECT=1
 ```
-
-Source: https://stackoverflow.com/questions/61110603/how-to-set-up-working-x11-forwarding-on-wsl2
 
 **Verify that VcXsrv is running correctly by testing Xcalc:**
 

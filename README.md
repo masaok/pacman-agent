@@ -1,4 +1,8 @@
-# Pacman Trainer
+## Pacman Trainer
+
+### The final display with terminal debug output
+
+<img src="https://user-images.githubusercontent.com/1320083/210688412-798b95b4-a958-474a-bbd9-d46a2af7abbf.png"  width="50%" height="50%">
 
 ## Prerequisites
 
@@ -11,7 +15,7 @@
 - Git Bash
 - Python 3.8.10 (Window WSL2 Ubuntu)
 - Python 3.9.8 ([See latest versions](https://www.python.org/downloads/))
-  - Python must be 3.9.x or [PyTorch will not work](https://pytorch.org/get-started/locally/#windows-python)
+  - Python must be 3.9.x or earlier or [PyTorch will not work](https://pytorch.org/get-started/locally/#windows-python)
 
 ```
 sudo apt update
